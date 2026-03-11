@@ -1,0 +1,8 @@
+[build]
+builder = "nixpacks"
+buildCommand = "bun install"
+
+[deploy]
+startCommand = "bun run src/index.ts"
+restartPolicyType = "ON_FAILURE"
+releaseCommand = "bun --bun drizzle-kit migrate"

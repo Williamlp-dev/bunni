@@ -8,11 +8,12 @@ import { conversationsRoutes } from "@/modules/conversations";
 import { messagesRoutes } from "@/modules/messages";
 import { uploadsRoutes } from "@/modules/uploads";
 import { wsPlugin } from "@/modules/websocket";
+import { env } from "@/env";
 
 const app = new Elysia()
   .use(
     cors({
-      origin: 'http://localhost:5173',
+      origin: env.CORS_ORIGIN,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       credentials: true,
       allowedHeaders: ['Content-Type', 'Authorization']
@@ -44,7 +45,7 @@ const app = new Elysia()
     console.log(`⬅️  ${method} ${url.pathname} ${status}`)
   })
   .get("/", () => "Hello Elysia")
-  .listen(3333);
+  .listen(env.PORT);
 
 
 
