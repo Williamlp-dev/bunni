@@ -1,0 +1,606 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================
+   BUNI DESIGN SYSTEM — index.css
+   ============================================================
+
+   ÍNDICE
+   ──────────────────────────────────────────────────────────
+   1.  Reset de defaults & variante dark
+   2.  Design Tokens (@theme)
+       2a. Tipografia
+       2b. Espaçamento
+       2c. Cores (mapeamento → CSS vars)
+       2d. Border Radius
+       2e. Sombras
+       2f. Z-Index
+       2g. Animações
+   3.  Paleta de Cores — Light Mode
+   4.  Paleta de Cores — Dark Mode
+   5.  Estilos Base
+   6.  Scrollbar
+   7.  Acessibilidade
+   8.  Utilitários
+
+   GUIA RÁPIDO DE USO
+   ──────────────────────────────────────────────────────────
+   CORES
+   • bg-background / text-foreground   → páginas e layouts principais
+   • bg-card / text-card-foreground    → cards, painéis, modais
+   • bg-popover                        → dropdowns, tooltips, popovers
+   • bg-primary / text-primary-fg      → CTAs, botões de ação principal
+   • bg-secondary                      → botões secundários, badges
+   • bg-muted / text-muted-foreground  → placeholders, textos sutis, disabled
+   • bg-accent                         → hover states, highlights leves
+   • bg-destructive                    → erros, ações destrutivas (delete, logout)
+   • border-border                     → bordas padrão
+   • border-input                      → bordas de campos de formulário
+   • ring-ring                         → foco/outline de acessibilidade
+
+   ESPAÇAMENTO (use Tailwind: p-*, m-*, gap-*, etc.)
+   • --spacing-1  (4px)   → micro — ícones internos, padding de badge
+   • --spacing-2  (8px)   → xs    — gap entre ícone e texto
+   • --spacing-3  (12px)  → sm    — padding interno de botão (y)
+   • --spacing-4  (16px)  → base  — padding interno de botão (x), gap de lista
+   • --spacing-5  (20px)  → md    — gap entre elementos de formulário
+   • --spacing-6  (24px)  → lg    — padding de card, seções
+   • --spacing-8  (32px)  → xl    → padding de seção, gap de layout
+   • --spacing-12 (48px)  → 2xl   → espaçamento entre seções
+   • --spacing-16 (64px)  → 3xl   → margens de página
+
+   TIPOGRAFIA (use classes: text-xs, text-sm, text-base, text-lg…)
+   • text-xs   (12px) → labels, captions, timestamps
+   • text-sm   (14px) → texto de interface, metadados, badges
+   • text-base (16px) → corpo de texto padrão, parágrafos
+   • text-lg   (18px) → subtítulos, destaques
+   • text-xl   (20px) → títulos de card
+   • text-2xl  (24px) → títulos de seção
+   • text-3xl+ (30px+)→ títulos de página, headings principais
+
+   BORDER RADIUS
+   • rounded-sm  → inputs, badges pequenos
+   • rounded-md  → botões, chips
+   • rounded-lg  → cards, modais (padrão do projeto)
+   • rounded-full → avatares, pills
+
+   SOMBRAS
+   • shadow-sm     → hover sutil em cards
+   • shadow-md     → cards elevados, dropdowns
+   • shadow-lg     → modais, popovers
+   • shadow-brand  → botões e elementos com cor primária
+
+   Z-INDEX (usar variáveis --z-*)
+   • --z-base     (0)    → fluxo normal
+   • --z-raised   (10)   → cards flutuantes, sticky headers
+   • --z-dropdown (100)  → dropdowns, menus
+   • --z-sticky   (200)  → barras fixas
+   • --z-overlay  (300)  → overlays de fundo (drawer backdrop)
+   • --z-modal    (400)  → modais, dialogs
+   • --z-popover  (500)  → tooltips, popovers (acima de modais)
+   • --z-toast    (600)  → notificações, toasts
+   • --z-max      (9999) → emergencial
+
+   ANIMAÇÕES — DURAÇÕES
+   • --duration-fast (150ms) → feedback instantâneo: press, hover, toggle
+   • --duration-base (220ms) → transições padrão: slide, fade, expand
+   • --duration-slow (350ms) → entradas elaboradas: modais, drawers
+   • --duration-page (500ms) → transições de página
+
+   ANIMAÇÕES — EASINGS
+   • --ease-out    → saídas, dismissals (elemento vai embora)
+   • --ease-spring → elementos que "entram com energia" (notificações, pop)
+   • --ease-ios    → transições de página estilo iOS
+   • --ease-snappy → hover/focus states, respostas rápidas
+
+   ============================================================ */
+
+/* ============================================================
+   1. RESET DE DEFAULTS & VARIANTE DARK
+   ============================================================ */
+
+@theme {
+  --color-*: initial;
+}
+
+@variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   2. DESIGN TOKENS
+   ============================================================ */
+
+@theme {
+
+  /* ── 2a. TIPOGRAFIA ─────────────────────────────────────── */
+
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  --font-weight-light:    300;
+  --font-weight-normal:   400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  /* line-heights — use tracking-tight para headings, tracking-normal para corpo */
+  --leading-tight:  1.25;
+  --leading-snug:   1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  /* ── 2b. ESPAÇAMENTO ────────────────────────────────────── */
+  /* Base: 4px. Multiplique pelo índice. Use Tailwind p-*, m-*, gap-* */
+
+  --spacing-px: 1px;
+  --spacing-0:  0px;
+  --spacing-1:  4px;
+  --spacing-2:  8px;
+  --spacing-3:  12px;
+  --spacing-4:  16px;
+  --spacing-5:  20px;
+  --spacing-6:  24px;
+  --spacing-7:  28px;
+  --spacing-8:  32px;
+  --spacing-9:  36px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-14: 56px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+  --spacing-24: 96px;
+
+  /* ── 2c. CORES (mapeamento → CSS vars) ──────────────────── */
+
+  /* Base — fundo de página e texto padrão */
+  --color-background:        var(--background);
+  --color-foreground:        var(--foreground);
+
+  /* Surfaces — superfícies elevadas */
+  --color-card:              var(--card);
+  --color-card-foreground:   var(--card-foreground);
+  --color-popover:           var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  /* Brand — cor de destaque/ação principal (#EC5556) */
+  --color-primary:            var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  /* Neutral — tons de suporte, ação secundária */
+  --color-secondary:            var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted:                var(--muted);
+  --color-muted-foreground:     var(--muted-foreground);
+  --color-accent:               var(--accent);
+  --color-accent-foreground:    var(--accent-foreground);
+
+  /* Feedback — estados de erro/danger */
+  --color-destructive:            var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  /* Feedback — sucesso */
+  --color-success:            var(--success);
+  --color-success-foreground: var(--success-foreground);
+
+  /* Feedback — aviso */
+  --color-warning:            var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
+  /* Bordas & Rings */
+  --color-border: var(--border);
+  --color-input:  var(--input);
+  --color-ring:   var(--ring);
+
+  /* Sidebar */
+  --color-sidebar:                    var(--sidebar);
+  --color-sidebar-foreground:         var(--sidebar-foreground);
+  --color-sidebar-primary:            var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent:             var(--sidebar-accent);
+  --color-sidebar-accent-foreground:  var(--sidebar-accent-foreground);
+  --color-sidebar-border:             var(--sidebar-border);
+  --color-sidebar-ring:               var(--sidebar-ring);
+
+  /* Misc */
+  --color-brand-shadow: var(--brand-shadow);
+
+  /* ── 2d. BORDER RADIUS ──────────────────────────────────── */
+  /* --radius base definido em :root como 0.75rem (12px)       */
+
+  --radius-none: 0px;
+  --radius-sm:   calc(var(--radius) - 4px);  /* 8px  — inputs, badges */
+  --radius-md:   calc(var(--radius) - 2px);  /* 10px — botões, chips  */
+  --radius-lg:   var(--radius);              /* 12px — cards, modais  */
+  --radius-xl:   calc(var(--radius) + 4px);  /* 16px — painéis grandes */
+  --radius-2xl:  calc(var(--radius) + 8px);  /* 20px — sheets, drawers */
+  --radius-full: 9999px;                     /* pills, avatares */
+
+  /* ── 2e. SOMBRAS ────────────────────────────────────────── */
+
+  --shadow-sm:    0 1px 2px 0 oklch(0 0 0 / 0.05);
+  --shadow-md:    0 4px 6px -1px oklch(0 0 0 / 0.08), 0 2px 4px -2px oklch(0 0 0 / 0.05);
+  --shadow-lg:    0 10px 15px -3px oklch(0 0 0 / 0.10), 0 4px 6px -4px oklch(0 0 0 / 0.05);
+  --shadow-xl:    0 20px 25px -5px oklch(0 0 0 / 0.12), 0 8px 10px -6px oklch(0 0 0 / 0.05);
+  --shadow-brand: 0 4px 14px 0 var(--brand-shadow);
+
+  /* ── 2f. Z-INDEX ────────────────────────────────────────── */
+
+  --z-base:     0;
+  --z-raised:   10;
+  --z-dropdown: 100;
+  --z-sticky:   200;
+  --z-overlay:  300;
+  --z-modal:    400;
+  --z-popover:  500;
+  --z-toast:    600;
+  --z-max:      9999;
+
+  /* ── 2g. ANIMAÇÕES ──────────────────────────────────────── */
+
+  --blur-xs: 2px;
+
+  /* Chatflow */
+  --animate-message-slide-up:    message-appear 180ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  --animate-message-slide-down:  message-disappear 150ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  --animate-typing-in:           typing-in 180ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  --animate-typing-out:          typing-out 150ms ease-in both;
+  --animate-typing-dot:          typing-dot-pulse 1.4s ease-in-out infinite;
+  --animate-reply-in:            reply-in 180ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  --animate-selection-bar-in:    selection-bar-in 200ms cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-send-pop:            send-pop 180ms cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-audio-wave:          audio-wave 1.2s ease-in-out infinite alternate;
+  --animate-pulse-ring:          pulse-ring 2s infinite;
+  --animate-friend-card-in:      friend-card-in 220ms cubic-bezier(0.32, 0.72, 0, 1) both;
+
+  /* Navegação */
+  --animate-page-slide-from-right: page-slide-from-right 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  --animate-page-slide-from-left:  page-slide-from-left 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  --animate-navigation-progress:   navigation-progress 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+
+  /* Loading */
+  --animate-skeleton-shimmer: skeleton-shimmer 2s ease-in-out infinite;
+  --animate-logo-pulse:       logo-pulse 2s ease-in-out infinite;
+  --animate-logo-float:       logo-float 3s ease-in-out infinite;
+  --animate-logo-bounce:      logo-bounce 1s ease-in-out infinite;
+  --animate-logo-spin-slow:   logo-spin-slow 8s linear infinite;
+  --animate-spinner-dots:     spinner-dots 1.4s ease-in-out infinite both;
+  --animate-inline-dots:      inline-dots 1.4s ease-in-out infinite;
+
+  /* ── Keyframes ───────────────────────────────────────────── */
+
+  @keyframes skeleton-shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+
+  @keyframes logo-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.7; transform: scale(0.95); }
+  }
+
+  @keyframes logo-float {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-8px); }
+  }
+
+  @keyframes logo-bounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    25%       { transform: translateY(-12px) scale(1.02); }
+    50%       { transform: translateY(0) scale(0.98); }
+    75%       { transform: translateY(-6px) scale(1.01); }
+  }
+
+  @keyframes logo-spin-slow {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  @keyframes spinner-dots {
+    0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+    40%            { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes inline-dots {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40%            { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes audio-wave {
+    0%   { transform: scaleY(0.3); }
+    100% { transform: scaleY(1); }
+  }
+
+  @keyframes message-appear {
+    from { opacity: 0; transform: scale(0.98); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes message-disappear {
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0; transform: scale(0.98); }
+  }
+
+  @keyframes typing-in {
+    from { opacity: 0; transform: scale(0.95) translateY(4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  @keyframes typing-out {
+    from { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+    to   { opacity: 0; transform: scale(0.95) translateY(4px); filter: blur(2px); }
+  }
+
+  @keyframes reply-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes typing-dot-pulse {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(0.5); }
+  }
+
+  @keyframes selection-bar-in {
+    from { opacity: 0; transform: translate3d(0, -100%, 0); }
+    to   { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+
+  @keyframes send-pop {
+    0%   { transform: scale(0.95); opacity: 0.7; }
+    60%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes pulse-ring {
+    0%   { transform: scale(0.8); box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 70%, transparent); }
+    70%  { transform: scale(1);   box-shadow: 0 0 0 10px transparent; }
+    100% { transform: scale(0.8); box-shadow: 0 0 0 0 transparent; }
+  }
+
+  @keyframes friend-card-in {
+    from { opacity: 0; transform: scale(0.97) translateY(6px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  @keyframes page-slide-from-right {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
+  }
+
+  @keyframes page-slide-from-left {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+  }
+
+  @keyframes navigation-progress {
+    0%   { transform: translateX(-100%) scaleX(0.3); }
+    50%  { transform: translateX(0%) scaleX(0.8); }
+    100% { transform: translateX(100%) scaleX(0.3); }
+  }
+}
+
+/* ============================================================
+   3. PALETA DE CORES — LIGHT MODE
+   ============================================================ */
+
+:root {
+  /* Raio base — alterar aqui reflete em todos os componentes */
+  --radius: 0.75rem;
+
+  /* ── Base ────────────────────────────────────────────────── */
+  --background: oklch(0.98 0.003 350);   /* página, layout root */
+  --foreground: oklch(0.25 0.02 300);    /* texto principal */
+
+  /* ── Surfaces ────────────────────────────────────────────── */
+  --card:              oklch(1 0 0);             /* card, painel */
+  --card-foreground:   oklch(0.25 0.02 300);
+  --popover:           oklch(1 0 0);             /* dropdown, tooltip */
+  --popover-foreground: oklch(0.25 0.02 300);
+
+  /* ── Brand (#EC5556) ─────────────────────────────────────── */
+  --primary:            oklch(0.64 0.22 26);     /* CTA, botão principal */
+  --primary-foreground: oklch(1 0 0);
+
+  /* ── Neutral ─────────────────────────────────────────────── */
+  --secondary:            oklch(0.95 0.01 300);  /* botão secundário */
+  --secondary-foreground: oklch(0.25 0.02 300);
+  --muted:                oklch(0.96 0.01 300);  /* fundo sutil, disabled */
+  --muted-foreground:     oklch(0.55 0.02 300);  /* texto secundário, placeholder */
+  --accent:               oklch(0.96 0.01 300);  /* hover highlight */
+  --accent-foreground:    oklch(0.25 0.02 300);
+
+  /* ── Feedback ────────────────────────────────────────────── */
+  --destructive:            oklch(0.577 0.245 27.325);  /* erro, delete */
+  --destructive-foreground: oklch(0.985 0 0);
+  --success:                oklch(0.65 0.17 145);       /* sucesso, confirmação */
+  --success-foreground:     oklch(0.985 0 0);
+  --warning:                oklch(0.75 0.18 75);        /* aviso, atenção */
+  --warning-foreground:     oklch(0.25 0.02 75);
+
+  /* ── Bordas & Rings ──────────────────────────────────────── */
+  --border: oklch(0.92 0.01 300);   /* bordas padrão */
+  --input:  oklch(0.92 0.01 300);   /* bordas de inputs */
+  --ring:   oklch(0.64 0.22 26);    /* foco/outline */
+
+  /* ── Sidebar ─────────────────────────────────────────────── */
+  --sidebar:                    oklch(0.98 0.003 350);
+  --sidebar-foreground:         oklch(0.25 0.02 300);
+  --sidebar-primary:            oklch(0.64 0.22 26);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent:             oklch(0.95 0.01 300);
+  --sidebar-accent-foreground:  oklch(0.25 0.02 300);
+  --sidebar-border:             oklch(0.92 0.01 300);
+  --sidebar-ring:               oklch(0.64 0.22 26);
+
+  /* ── Misc ────────────────────────────────────────────────── */
+  --brand-shadow: oklch(0 0 0 / 0.24);
+
+  /* ── Durações de Animação ────────────────────────────────── */
+  --duration-fast: 150ms;   /* press, hover, toggle */
+  --duration-base: 220ms;   /* slide, fade, expand */
+  --duration-slow: 350ms;   /* modal, drawer */
+  --duration-page: 500ms;   /* transição de página */
+
+  /* ── Easings de Animação ─────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.21, 0.47, 0.32, 0.98); /* saídas, dismissals */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);    /* entradas com energia */
+  --ease-ios:    cubic-bezier(0.32, 0.72, 0, 1);        /* transições de página */
+  --ease-snappy: cubic-bezier(0.4, 0, 0.2, 1);          /* hover/focus rápidos */
+}
+
+/* ============================================================
+   4. PALETA DE CORES — DARK MODE
+   ============================================================ */
+
+.dark {
+  /* ── Base ────────────────────────────────────────────────── */
+  --background: oklch(0.14 0.01 300);
+  --foreground: oklch(0.98 0.003 350);
+
+  /* ── Surfaces ────────────────────────────────────────────── */
+  --card:               oklch(0.17 0.01 300);
+  --card-foreground:    oklch(0.98 0.003 350);
+  --popover:            oklch(0.17 0.01 300);
+  --popover-foreground: oklch(0.98 0.003 350);
+
+  /* ── Brand ───────────────────────────────────────────────── */
+  --primary:            oklch(0.64 0.22 26);
+  --primary-foreground: oklch(1 0 0);
+
+  /* ── Neutral ─────────────────────────────────────────────── */
+  --secondary:            oklch(0.22 0.01 300);
+  --secondary-foreground: oklch(0.98 0.003 350);
+  --muted:                oklch(0.22 0.01 300);
+  --muted-foreground:     oklch(0.65 0.02 300);
+  --accent:               oklch(0.22 0.01 300);
+  --accent-foreground:    oklch(0.98 0.003 350);
+
+  /* ── Feedback ────────────────────────────────────────────── */
+  --destructive:            oklch(0.5 0.2 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --success:                oklch(0.55 0.15 145);
+  --success-foreground:     oklch(0.985 0 0);
+  --warning:                oklch(0.65 0.16 75);
+  --warning-foreground:     oklch(0.985 0 0);
+
+  /* ── Bordas & Rings ──────────────────────────────────────── */
+  --border: oklch(0.22 0.01 300);
+  --input:  oklch(0.22 0.01 300);
+  --ring:   oklch(0.64 0.22 26);
+
+  /* ── Sidebar ─────────────────────────────────────────────── */
+  --sidebar:                    oklch(0.14 0.01 300);
+  --sidebar-foreground:         oklch(0.98 0.003 350);
+  --sidebar-primary:            oklch(0.64 0.22 26);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent:             oklch(0.22 0.01 300);
+  --sidebar-accent-foreground:  oklch(0.98 0.003 350);
+  --sidebar-border:             oklch(0.22 0.01 300);
+  --sidebar-ring:               oklch(0.64 0.22 26);
+
+  /* ── Misc ────────────────────────────────────────────────── */
+  --brand-shadow: oklch(1 0 0 / 0.2);
+}
+
+/* ============================================================
+   5. ESTILOS BASE
+   ============================================================ */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  /* Corrige o fundo amarelo do autocomplete no Chrome/Webkit */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px var(--color-background) inset !important;
+    -webkit-text-fill-color: var(--color-foreground) !important;
+    caret-color: var(--color-foreground) !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+}
+
+html {
+  scrollbar-gutter: stable;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+/* ============================================================
+   6. SCROLLBAR
+   ============================================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--muted-foreground) 30%, transparent);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklch, var(--muted-foreground) 50%, transparent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--muted-foreground) 30%, transparent) transparent;
+}
+
+/* ============================================================
+   7. ACESSIBILIDADE
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   8. UTILITÁRIOS
+   ============================================================ */
+
+@theme inline {
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning-foreground: var(--warning-foreground);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Press feedback — aplique em botões e elementos clicáveis */
+.btn-press {
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    scale var(--duration-fast) var(--ease-out);
+}
+.btn-press:active,
+.btn-press[data-pressed],
+.btn-press[data-state="open"] {
+  transform: scale(0.95) !important;
+  scale: 0.95 !important;
+  transition-duration: 50ms !important;
+}
