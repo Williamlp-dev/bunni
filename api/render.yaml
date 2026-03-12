@@ -12,6 +12,12 @@ services:
         sync: false
       - key: CORS_ORIGIN
         sync: false
+      - key: BETTER_AUTH_URL
+        sync: false
+      - key: BETTER_AUTH_SECRET
+        sync: false
+      - key: RESEND
+        sync: false
       - key: R2_ACCOUNT_ID
         sync: false
       - key: R2_ACCESS_KEY_ID
