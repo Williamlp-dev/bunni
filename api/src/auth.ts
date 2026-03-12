@@ -36,9 +36,10 @@ export const auth = betterAuth({
     database: {
       generateId: false,
     },
-    cookieOptions: {
+    defaultCookieAttributes: {
       sameSite: "none",
       secure: true,
+      partitioned: true,
     },
   },
 
