@@ -16,6 +16,8 @@ services:
         sync: false
       - key: BETTER_AUTH_SECRET
         sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
       - key: RESEND
         sync: false
       - key: R2_ACCOUNT_ID
