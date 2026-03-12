@@ -3,7 +3,7 @@ import { usernameClient } from "better-auth/client/plugins"
 import { queryOptions } from "@tanstack/react-query"
 
 export const auth = createAuthClient({
-  baseURL: "http://localhost:3333",
+  baseURL: import.meta.env.VITE_PUBLIC_API_URL as string,
   basePath: "/auth",
   plugins: [
     usernameClient()

@@ -4,15 +4,14 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { db } from "./database/client"
 import { openAPI, bearer, username } from "better-auth/plugins"
 import { buildResetPasswordHtml } from "./emails/reset-password"
+import { env } from "@/env"
 
 const resend = new Resend(process.env.RESEND)
 
 export const auth = betterAuth({
   basePath: "/auth",
-  baseURL: "http://localhost:3333",
-  trustedOrigins: [
-    'http://localhost:5173'
-  ],
+  baseURL: env.BETTER_AUTH_URL,
+  trustedOrigins: env.CORS_ORIGIN,
   plugins: [
     openAPI(),
     bearer(),

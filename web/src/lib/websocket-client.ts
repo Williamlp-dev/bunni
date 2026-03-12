@@ -1,4 +1,5 @@
-const WS_BASE_URL = "ws://localhost:3333/ws"
+const API_URL = import.meta.env.VITE_PUBLIC_API_URL as string
+const WS_BASE_URL = `${API_URL.replace(/^http/, 'ws')}/ws`
 const RECONNECT_MAX_ATTEMPTS = 5
 const RECONNECT_BASE_DELAY = 1000
 const DISCONNECT_DELAY_MS = 100

@@ -32,7 +32,7 @@ export function ForgotPasswordForm(): React.ReactElement {
     
     const { error } = await auth.requestPasswordReset({
       email,
-      redirectTo: "http://localhost:5173/reset-password",
+      redirectTo: `${import.meta.env.VITE_PUBLIC_APP_URL}/reset-password`,
     })
 
     if (error) {
