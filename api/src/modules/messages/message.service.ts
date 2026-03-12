@@ -361,7 +361,8 @@ export async function sendMessage(
     snapshotSenderName = parentMessage.sender.name ?? parentMessage.sender.displayUsername
   }
 
-  const encryptedContent = (messageType === "audio" || messageType === "image") ? null : encrypt(content)
+  const finalContent = messageType === "audio" ? "Mensagem de voz" : messageType === "image" ? "Imagem" : content
+  const encryptedContent = encrypt(finalContent)
 
   const [message] = await db
     .insert(messages)
