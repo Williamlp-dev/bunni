@@ -39,6 +39,7 @@ export const messagesRoutes = new Elysia({ prefix: "/messages" })
         body.content,
         body.replyToId,
         {
+          id: body.id,
           type: body.type,
           audioUrl: body.audioUrl,
           audioDuration: body.audioDuration,

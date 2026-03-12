@@ -296,6 +296,7 @@ async function validateParticipation(
 
 
 type SendMessageOptions = {
+  id?: string
   type?: "text" | "audio" | "image"
   audioUrl?: string
   audioDuration?: number
@@ -365,6 +366,7 @@ export async function sendMessage(
   const [message] = await db
     .insert(messages)
     .values({
+      id: options?.id,
       conversationId,
       senderId,
       content: encryptedContent,

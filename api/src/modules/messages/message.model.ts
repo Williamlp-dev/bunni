@@ -10,6 +10,7 @@ export const SendMessageBodySchema = t.Object({
   audioDuration: t.Optional(t.Number({ minimum: 1, maximum: 120 })),
   imageUrl: t.Optional(t.String()),
   replyToId: t.Optional(t.String({ format: "uuid" })),
+  id: t.Optional(t.String({ format: "uuid" })),
 })
 
 export type SendMessageBody = Static<typeof SendMessageBodySchema>
