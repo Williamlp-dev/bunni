@@ -59,10 +59,10 @@ export function useWebSocket(userId: string): {
           ? {
             id: data.replyTo.id,
             content: data.replyTo.content,
-            senderName:
-              data.replyTo.sender.name ?? data.replyTo.sender.displayUsername,
-            deletedAt: data.replyTo.deletedAt,
-          }
+            sender: { ...data.replyTo.sender },
+            createdAt: new Date(data.replyTo.createdAt),
+            deletedAt: data.replyTo.deletedAt ? new Date(data.replyTo.deletedAt) : null,
+          } as any
           : null,
       }
 

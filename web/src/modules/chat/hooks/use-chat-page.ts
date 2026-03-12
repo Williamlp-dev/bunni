@@ -149,12 +149,13 @@ export function useChatPage(username: string) {
       content,
       type: "text",
       replyTo: replyingTo
-        ? {
+        ? ({
             id: replyingTo.id,
             content: replyingTo.content,
-            senderName: replyingTo.sender.name ?? replyingTo.sender.displayUsername,
+            sender: { ...replyingTo.sender },
+            createdAt: replyingTo.createdAt,
             deletedAt: replyingTo.deletedAt,
-          }
+          } as any)
         : null,
     })
 
