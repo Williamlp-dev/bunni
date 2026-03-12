@@ -353,6 +353,8 @@ export async function sendMessage(
       : parentMessage.type === "image"
         ? "📷 Imagem"
         : parentMessage.content
+          ? decrypt(parentMessage.content)
+          : null
 
     snapshotContent = rawSnapshot ? encrypt(rawSnapshot) : null
     snapshotSenderName = parentMessage.sender.name ?? parentMessage.sender.displayUsername
