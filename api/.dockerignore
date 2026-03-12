@@ -1,6 +1,10 @@
 node_modules
 .git
 .env
+.env.*
 *.md
 .gitignore
 drizzle
+railway.toml
+docker-compose.yml
+.dockerignore
