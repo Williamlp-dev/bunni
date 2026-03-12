@@ -17,7 +17,7 @@ function buildOptimisticMessage(
   overrides: Partial<Message>
 ): Message {
   return {
-    id: `temp-${Date.now()}`,
+    id: overrides.id ?? crypto.randomUUID(),
     conversationId,
     senderId: currentUserId,
     content: overrides.content ?? "",
@@ -145,7 +145,10 @@ export function useChatPage(username: string) {
     if (!conversationId) return
     sendTypingStop(conversationId)
 
+    const messageId = crypto.randomUUID()
+
     const optMessage = buildOptimisticMessage(session, currentUserId, conversationId, {
+      id: messageId,
       content,
       type: "text",
       replyTo: replyingTo
@@ -162,6 +165,7 @@ export function useChatPage(username: string) {
     startTransition(async () => {
       addOptimisticMessage(optMessage)
       await sendMessageMutation.mutateAsync({
+        id: messageId,
         conversationId,
         content,
         replyToId: replyingTo?.id,
@@ -176,7 +180,10 @@ export function useChatPage(username: string) {
     if (!conversationId) return
     sendTypingStop(conversationId)
 
+    const messageId = crypto.randomUUID()
+
     const optMessage = buildOptimisticMessage(session, currentUserId, conversationId, {
+      id: messageId,
       content: "🎤 Mensagem de voz",
       type: "audio",
       audioUrl: URL.createObjectURL(blob),
@@ -188,6 +195,7 @@ export function useChatPage(username: string) {
       try {
         const result = await audioUpload.mutateAsync({ blob, duration, conversationId })
         await sendMessageMutation.mutateAsync({
+          id: messageId,
           conversationId,
           content: "🎤 Mensagem de voz",
           type: "audio",
@@ -207,7 +215,10 @@ export function useChatPage(username: string) {
   const handleSendImageMessage = async (file: File) => {
     if (!conversationId) return
 
+    const messageId = crypto.randomUUID()
+
     const optMessage = buildOptimisticMessage(session, currentUserId, conversationId, {
+      id: messageId,
       type: "image",
       imageUrl: URL.createObjectURL(file),
     })
@@ -217,6 +228,7 @@ export function useChatPage(username: string) {
       try {
         const result = await imageUpload.mutateAsync({ file, conversationId })
         await sendMessageMutation.mutateAsync({
+          id: messageId,
           conversationId,
           content: "",
           type: "image",

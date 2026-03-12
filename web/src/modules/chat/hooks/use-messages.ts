@@ -21,6 +21,7 @@ type SendMessageParams = {
   imageUrl?: string
   replyToId?: string
   replyToMessage?: Message
+  id?: string
 }
 
 type UseMessagesOptions = {
@@ -102,10 +103,11 @@ export function useSendMessage() {
       audioDuration,
       imageUrl,
       replyToId,
+      id,
     }: SendMessageParams) => {
       const { data, error } = await api
         .messages({ id: conversationId })
-        .post({ content, type, audioUrl, audioDuration, imageUrl, replyToId })
+        .post({ content, type, audioUrl, audioDuration, imageUrl, replyToId, id })
       if (error) throw error
       return data
     },
@@ -120,17 +122,14 @@ export function useSendMessage() {
           const lastPageIndex = old.pages.length - 1
           const lastPage = old.pages[lastPageIndex]
 
-          const messagesWithoutTemp = lastPage.messages.filter(
-            (m: Message) => !m.id.startsWith("temp-")
-          )
-
-          const alreadyExists = messagesWithoutTemp.some(
+          // Since the client sets the ID beforehand, we just need to ensure we don't duplicate
+          const alreadyExists = lastPage.messages.some(
             (m: Message) => m.id === realMessage.id
           )
 
           const updatedMessages = alreadyExists
-            ? messagesWithoutTemp
-            : [...messagesWithoutTemp, realMessage]
+            ? lastPage.messages
+            : [...lastPage.messages, realMessage]
 
           return {
             ...old,
