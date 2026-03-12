@@ -132,7 +132,6 @@ export function MessageList({
               const element = document.getElementById(`message-${messageId}`)
               if (element) {
                 element.scrollIntoView({ behavior: "smooth", block: "center" })
-                // Add temporary highlight
                 element.classList.add("bg-primary/10")
                 setTimeout(() => {
                   element.classList.remove("bg-primary/10")
@@ -194,7 +193,8 @@ export function MessageList({
                     timestamp={formatTimestamp(message.createdAt)}
                     grouped={grouped}
                     showAvatar={!isOwner}
-                    avatarFallback={(activeParticipantName || "?").slice(0, 2).toUpperCase()}
+                    avatarSrc={message.sender?.image || undefined}
+                    avatarFallback={(message.sender?.name || message.sender?.displayUsername || activeParticipantName || "?").slice(0, 2).toUpperCase()}
                     replyTo={message.replyTo ? {
                       id: message.replyTo.id,
                       content: message.replyTo.content,
