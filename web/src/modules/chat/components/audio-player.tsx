@@ -1,6 +1,5 @@
 import { useRef, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { Play, Pause, Loader2, MicOff } from "lucide-react"
 import { useAudioPlayer } from "../hooks/use-audio-player"
 
@@ -238,12 +237,12 @@ export function AudioPlayer({
 
   return (
     <div className={cn("flex items-center gap-3 py-0.5", className)}>
-      <Button
+      <button
         type="button"
-        variant="ghost"
-        size="icon"
         className={cn(
-          "shrink-0 size-8 rounded-full transition-transform active:scale-95",
+          "relative shrink-0 size-8 rounded-full flex items-center justify-center cursor-pointer outline-none",
+          "transition-transform duration-[--duration-fast] ease-[--ease-snappy]",
+          "active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed",
           isSent
             ? "hover:bg-primary-foreground/20 text-primary-foreground"
             : "hover:bg-foreground/10 text-foreground"
@@ -252,27 +251,25 @@ export function AudioPlayer({
         disabled={isLoading}
         aria-label={isPlaying ? "Pausar áudio" : "Reproduzir áudio"}
       >
-        <div className="relative flex items-center justify-center size-full">
-          {isLoading ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : (
-            <>
-              <Play
-                className={cn(
-                  "absolute size-3.5 fill-current ml-0.5 transition-all duration-200 ease-out",
-                  isPlaying ? "opacity-0 scale-50" : "opacity-100 scale-100"
-                )}
-              />
-              <Pause
-                className={cn(
-                  "absolute size-3.5 fill-current transition-all duration-200 ease-out",
-                  isPlaying ? "opacity-100 scale-100" : "opacity-0 scale-50"
-                )}
-              />
-            </>
-          )}
-        </div>
-      </Button>
+        {isLoading ? (
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : (
+          <>
+            <Play
+              className={cn(
+                "absolute size-3.5 fill-current ml-0.5 transition-[opacity,transform] duration-200 ease-out",
+                isPlaying ? "opacity-0 scale-50" : "opacity-100 scale-100"
+              )}
+            />
+            <Pause
+              className={cn(
+                "absolute size-3.5 fill-current transition-[opacity,transform] duration-200 ease-out",
+                isPlaying ? "opacity-100 scale-100" : "opacity-0 scale-50"
+              )}
+            />
+          </>
+        )}
+      </button>
 
       <AudioProgressBar
         audioRef={audioRef}

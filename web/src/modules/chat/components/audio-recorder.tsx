@@ -169,14 +169,14 @@ function WaveBars({ status }: { status: RecordingStatus }): React.JSX.Element {
   const isRecording = status === 'recording'
 
   return (
-    <div className="flex h-8 flex-1 items-center justify-center gap-0.5 px-2 overflow-hidden mask-linear-fade">
+    <div className="flex h-8 flex-1 items-center justify-center gap-1 px-2 overflow-hidden mask-linear-fade">
       {Array.from({ length: WAVE_BAR_COUNT }, (_, i) => {
         const seedHeight = 4 + ((i * 7 + 3) % 18)
         return (
           <div
             key={i}
             className={cn(
-              'w-1 rounded-full transition-all duration-300',
+              'w-1 rounded-full',
               isRecording ? 'animate-audio-wave bg-primary shadow-brand' : 'h-1 bg-primary/20'
             )}
             style={{
@@ -204,7 +204,6 @@ export function AudioRecorderOverlay({ hideSendButton = false }: AudioRecorderOv
       data-state={isOpen ? 'open' : 'closed'}
       className={cn(
         "absolute inset-0 z-10 flex items-center gap-2 rounded-md bg-background px-2 border border-input",
-        "transition-all duration-500 ease-out",
         "data-[state=closed]:opacity-0 data-[state=closed]:pointer-events-none data-[state=closed]:clip-path-[inset(0_0_0_100%)]",
         "data-[state=open]:opacity-100 data-[state=open]:clip-path-[inset(0_0_0_0)]"
       )}
@@ -213,7 +212,7 @@ export function AudioRecorderOverlay({ hideSendButton = false }: AudioRecorderOv
         type="button"
         variant="ghost"
         size="icon"
-        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0 size-9 rounded-full btn-press transition-transform"
+        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0 size-9 rounded-full btn-press"
         onClick={stop}
         aria-label="Discard recording"
       >
@@ -225,7 +224,7 @@ export function AudioRecorderOverlay({ hideSendButton = false }: AudioRecorderOv
       <div className="flex items-center gap-2 shrink-0">
         <span
           className={cn(
-            'min-w-12 text-center font-mono text-xs font-medium tabular-nums px-2 py-1 rounded-md bg-muted/50',
+            'min-w-12 text-center font-mono text-xs font-medium tabular-nums px-2 py-1 rounded-md bg-muted',
             status === 'recording' ? 'text-primary' : 'text-muted-foreground'
           )}
         >
@@ -243,7 +242,7 @@ export function AudioRecorderOverlay({ hideSendButton = false }: AudioRecorderOv
           <div className="relative flex items-center justify-center size-full">
             <Pause
               className={cn(
-                'absolute size-4 fill-current transition-all duration-200 ease-out',
+                'absolute size-4 fill-current',
                 status === 'recording'
                   ? 'opacity-100 scale-100 blur-0'
                   : 'opacity-0 scale-50 blur-sm'
@@ -251,7 +250,7 @@ export function AudioRecorderOverlay({ hideSendButton = false }: AudioRecorderOv
             />
             <Play
               className={cn(
-                'absolute size-4 fill-current ml-0.5 transition-all duration-200 ease-out',
+                'absolute size-4 fill-current ml-1',
                 status === 'recording'
                   ? 'opacity-0 scale-50 blur-sm'
                   : 'opacity-100 scale-100 blur-0'
@@ -305,7 +304,7 @@ export function AudioRecorderTrigger({ disabled, className, onSubmitBehavior = '
       variant="ghost"
       size="icon"
       className={cn(
-        'relative transition-all duration-200 ease-out',
+        'relative',
         isActive && 'bg-primary text-primary-foreground rotate-0 scale-100',
         className
       )}
@@ -315,14 +314,14 @@ export function AudioRecorderTrigger({ disabled, className, onSubmitBehavior = '
       <div className="relative flex items-center justify-center size-full">
         <Mic
           className={cn(
-            'absolute size-5 transition-all duration-200',
+            'absolute size-5',
             isActive ? 'opacity-0 scale-50 blur-sm' : 'opacity-100 scale-100 blur-0'
           )}
         />
 
         <Send
           className={cn(
-            'absolute size-5 transition-all duration-200',
+            'absolute size-5',
             isActive ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-50 blur-sm'
           )}
         />

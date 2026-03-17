@@ -13,7 +13,6 @@ export type MessageBubbleProps = {
   imageUrl?: string | null
   timestamp?: string
   variant?: "sent" | "received"
-  grouped?: "first" | "middle" | "last" | "none"
   showAvatar?: boolean
   avatarSrc?: string
   avatarFallback?: string
@@ -37,7 +36,6 @@ export function MessageBubble({
   imageUrl,
   timestamp,
   variant = "received",
-  grouped = "none",
   showAvatar = false,
   avatarSrc,
   avatarFallback,
@@ -49,21 +47,11 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const isSent = variant === "sent"
 
-  const radiusMap = {
-    first: isSent ? "rounded-2xl rounded-br-sm" : "rounded-2xl rounded-bl-sm",
-    middle: isSent ? "rounded-2xl rounded-r-sm" : "rounded-2xl rounded-l-sm",
-    last: isSent ? "rounded-2xl rounded-tr-sm" : "rounded-2xl rounded-tl-sm",
-    none: "rounded-2xl",
-  }
-
-  const radiusClass = radiusMap[grouped] || "rounded-2xl"
-
   return (
     <div
       className={cn(
         "flex flex-col group",
         isSent ? "items-end" : "items-start",
-        grouped === "middle" && "my-0.5",
         className
       )}
     >
@@ -88,7 +76,7 @@ export function MessageBubble({
               isSent
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-foreground",
-              radiusClass,
+              "rounded-2xl",
               replyTo && "p-1.5 flex flex-col gap-0.5"
             )}
           >

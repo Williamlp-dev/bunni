@@ -36,7 +36,7 @@ export function MessageListSkeleton(): React.ReactElement {
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className={`flex flex-col gap-2 ${i % 2 === 0 ? "items-end" : "items-start"}`}>
           <Skeleton
-            className={`h-12 w-3/5 rounded-2xl ${i % 2 === 0 ? "rounded-tr-sm bg-primary/20" : "rounded-tl-sm bg-muted"}`}
+            className={`h-12 w-3/5 rounded-2xl ${i % 2 === 0 ? "bg-muted" : "bg-card"}`}
           />
           <Skeleton className="h-3 w-16 opacity-50" />
         </div>
@@ -108,25 +108,12 @@ export function MessageList({
           <div className="flex-1" />
           <DateDivider date="Hoje" />
           <div className="h-6" />
-          {messages.map((message, index) => {
+          {messages.map((message) => {
             const isOwner = message.senderId === currentUserId
             const isDeleted = !!message.deletedAt
             const isSelected = selectedMessageIds?.has(message.id) ?? false
 
-            const prevMessage = messages[index - 1]
-            const nextMessage = messages[index + 1]
 
-            const isPrevSameSender = prevMessage?.senderId === message.senderId
-            const isNextSameSender = nextMessage?.senderId === message.senderId
-
-            let grouped: "first" | "middle" | "last" | "none" = "none"
-            if (isPrevSameSender && isNextSameSender) {
-              grouped = "middle"
-            } else if (!isPrevSameSender && isNextSameSender) {
-              grouped = "first"
-            } else if (isPrevSameSender && !isNextSameSender) {
-              grouped = "last"
-            }
 
             const handleReplyClick = (messageId: string) => {
               const element = document.getElementById(`message-${messageId}`)
@@ -155,9 +142,8 @@ export function MessageList({
                 key={message.id}
                 id={`message-${message.id}`}
                 className={cn(
-                  "relative flex items-center group transition-colors duration-500 rounded-lg",
+                  "relative flex items-center group transition-colors duration-500 rounded-lg py-1",
                   isOwner && "flex-row-reverse",
-                  grouped === "middle" ? "my-0.5" : grouped === "first" ? "mt-1 mb-0.5" : grouped === "last" ? "mt-0.5 mb-2" : "my-2",
                 )}
                 onPointerDown={(e) => handlePointerDown(e, message)}
                 onPointerUp={handlePointerUp}
@@ -179,7 +165,7 @@ export function MessageList({
                   <Checkbox
                     checked={isSelected}
                     onCheckedChange={() => onToggleSelect?.(message)}
-                    className="size-5 rounded-full border-muted-foreground/50 data-[state=checked]:border-primary"
+                    className="size-5 rounded-full border-input data-[state=checked]:border-primary"
                   />
                 </div>
                 <div className="relative flex-1 min-w-0">
@@ -191,7 +177,6 @@ export function MessageList({
                     imageUrl={message.imageUrl}
                     variant={isOwner ? "sent" : "received"}
                     timestamp={formatTimestamp(message.createdAt)}
-                    grouped={grouped}
                     showAvatar={!isOwner}
                     avatarSrc={message.sender?.image || undefined}
                     avatarFallback={(message.sender?.name || message.sender?.displayUsername || activeParticipantName || "?").slice(0, 2).toUpperCase()}
@@ -210,10 +195,10 @@ export function MessageList({
                         >
                           <Menu>
                             <MenuTrigger
-                              className="inline-flex items-center justify-center p-1.5 rounded-full bg-background/90 border border-border/50 hover:bg-muted cursor-pointer shadow-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              className="inline-flex items-center justify-center p-2 rounded-full bg-background border border-border hover:bg-muted cursor-pointer shadow-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <ChevronDown className="size-3.5 text-muted-foreground" />
+                              <ChevronDown className="size-4 text-muted-foreground" />
                             </MenuTrigger>
                             <MenuPopup
                               align={isOwner ? "end" : "start"}
@@ -262,7 +247,7 @@ export function MessageList({
       <Empty>
         <EmptyHeader>
           <EmptyMedia>
-            <MessageSquare className="size-16 opacity-20" />
+            <MessageSquare className="size-16 text-muted-foreground/50" />
           </EmptyMedia>
           <EmptyTitle>Nenhuma mensagem</EmptyTitle>
           <EmptyDescription>Envie uma mensagem para iniciar a conversa</EmptyDescription>
@@ -275,7 +260,7 @@ export function MessageList({
     <Empty>
       <EmptyHeader>
         <EmptyMedia>
-          <MessageSquare className="size-16 opacity-20" />
+          <MessageSquare className="size-16 text-muted-foreground/50" />
         </EmptyMedia>
         <EmptyTitle>Selecione uma conversa</EmptyTitle>
         <EmptyDescription>Escolha uma conversa na barra lateral para começar</EmptyDescription>

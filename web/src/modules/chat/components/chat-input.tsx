@@ -56,17 +56,17 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
   const replyingSenderName = replyingTo?.sender.name ?? replyingTo?.sender.displayUsername
 
   return (
-    <div className="flex flex-col bg-background/90 border-t border-border/50">
+    <div className="flex flex-col bg-background border-t border-border">
       <div
         className={cn(
-          "grid transition-all duration-300 ease-out",
+          "grid ease-out",
           replyingTo ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
         )}
       >
         <div className="overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3 bg-accent/50 border-b border-border/50">
+          <div className="flex items-center justify-between px-6 py-4 bg-accent border-b border-border">
             <div className="flex items-center gap-3 overflow-hidden">
-              <div className="p-1.5 rounded-lg bg-primary/10">
+              <div className="p-2 rounded-lg bg-primary/10">
                 <MessageSquareReply className="size-4 text-primary shrink-0" />
               </div>
               <div className="flex flex-col text-sm overflow-hidden">
@@ -82,7 +82,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
               onClick={onCancelReply}
               variant="ghost"
               size="icon"
-              className="hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground active:scale-95 transition-transform duration-150 ease-out"
+              className="hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground active:scale-95 ease-out"
             >
               <X className="size-4" />
             </Button>
@@ -95,7 +95,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
           <form
             onSubmit={handleSubmit}
             className={cn(
-              "flex items-center gap-4 px-5 py-2 h-20",
+              "flex items-center gap-4 px-6 py-2 h-20",
               className
             )}
           >
@@ -119,7 +119,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
                     variant="ghost"
                     size="icon"
                     disabled={disabled}
-                    className="text-muted-foreground hover:text-foreground hover:bg-secondary/60 rounded-lg shrink-0"
+                    className="text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg shrink-0"
                   >
                     <CirclePlus className="size-5" />
                   </Button>
@@ -141,8 +141,8 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
                     size="icon"
                     disabled={disabled}
                     className={cn(
-                      "text-muted-foreground hover:text-foreground hover:bg-secondary/60 rounded-lg shrink-0",
-                      showEmojiPicker && "text-primary bg-secondary/60"
+                      "text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg shrink-0",
+                      showEmojiPicker && "text-primary bg-secondary"
                     )}
                   >
                     <Smile className="size-5" />
@@ -150,7 +150,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
                 } />
                 <PopoverContent className="w-auto p-0 border-none shadow-none bg-transparent" side="top" align="start">
                   <Suspense fallback={
-                    <div className="h-80 w-80 sm:w-96 md:h-96 md:w-96 bg-background/90 rounded-xl border border-border/50 flex items-center justify-center">
+                    <div className="h-80 w-80 sm:w-96 md:h-96 md:w-96 bg-background rounded-xl border border-border flex items-center justify-center">
                       <Loader className="size-6 animate-spin text-primary" />
                     </div>
                   }>
@@ -173,7 +173,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
                 <div className="pointer-events-none absolute inset-0 flex items-center px-4 overflow-hidden">
                   <span
                     className={cn(
-                      "absolute whitespace-nowrap text-muted-foreground transition-all duration-300 ease-out",
+                      "absolute whitespace-nowrap text-muted-foreground ease-out",
                       message ? "opacity-0 translate-y-0" : replyingTo ? "opacity-0 -translate-y-4" : "opacity-100 translate-y-0",
                     )}
                   >
@@ -181,7 +181,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
                   </span>
                   <span
                     className={cn(
-                      "absolute whitespace-nowrap text-muted-foreground transition-all duration-300 ease-out",
+                      "absolute whitespace-nowrap text-muted-foreground ease-out",
                       message ? "opacity-0 translate-y-0" : replyingTo ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
                     )}
                   >
@@ -209,7 +209,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
                 size="icon"
                 disabled={!message.trim() || disabled}
                 className={cn(
-                  "absolute inset-0 z-10 rounded-lg transition-all duration-200 ease-out active:scale-95",
+                  "absolute inset-0 z-10 rounded-lg ease-out active:scale-95",
                   message.trim()
                     ? "opacity-100 scale-100 blur-0 text-primary hover:text-primary-foreground hover:bg-primary animate-send-pop"
                     : "opacity-0 scale-50 blur-sm pointer-events-none"
@@ -220,7 +220,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
 
               <div
                 className={cn(
-                  "absolute inset-0 z-0 transition-all duration-200 ease-out",
+                  "absolute inset-0 z-0 ease-out",
                   !message.trim()
                     ? "opacity-100 scale-100 blur-0"
                     : "opacity-0 scale-50 blur-sm pointer-events-none"
