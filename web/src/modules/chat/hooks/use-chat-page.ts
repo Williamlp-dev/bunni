@@ -1,13 +1,14 @@
-import { useState, useEffect, useOptimistic, startTransition } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate, useRouteContext } from "@tanstack/react-router"
 import { useSuspenseConversationByUsername } from "@/modules/chat/hooks/use-conversations"
-import { useSuspenseMessages, useSendMessage, flattenMessages } from "@/modules/chat/hooks/use-messages"
+import { useSuspenseMessages, useSendMessage, flattenMessages, messagesKeys, type InfiniteMessagesData } from "@/modules/chat/hooks/use-messages"
 import { useDeleteForMe, useDeleteForEveryone, canDeleteForEveryone } from "@/modules/chat/hooks/use-delete-messages"
 import { useWebSocket } from "@/modules/chat/hooks/use-websocket"
 import { useMessageSelection } from "@/modules/chat/hooks/use-message-selection"
 import { useAudioUpload } from "@/modules/chat/hooks/use-audio-upload"
 import { useImageUpload } from "@/modules/chat/hooks/use-image-upload"
 import type { Message } from "@/lib/eden-types"
+import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 function buildOptimisticMessage(
@@ -65,12 +66,26 @@ export function useChatPage(username: string) {
   const { subscribe, sendTypingStart, sendTypingStop, typingUsers } = useWebSocket(currentUserId)
   const { selectedMessages, isSelectionMode, selectMessage, toggleMessage, clearSelection, copySelectedContent } = useMessageSelection()
 
+  const queryClient = useQueryClient()
   const messages = flattenMessages(messagesData)
 
-  const [optimisticMessages, addOptimisticMessage] = useOptimistic<Message[], Message>(
-    messages,
-    (state, newMessage) => [...state, newMessage]
-  )
+  const insertOptimisticIntoCache = (msg: Message) => {
+    queryClient.setQueryData<InfiniteMessagesData>(
+      messagesKeys.list(msg.conversationId),
+      (old) => {
+        if (!old?.pages?.length) return old
+        const lastPageIndex = old.pages.length - 1
+        return {
+          ...old,
+          pages: old.pages.map((page, i) =>
+            i === lastPageIndex
+              ? { ...page, messages: [...page.messages, msg] }
+              : page
+          ),
+        }
+      }
+    )
+  }
 
   const typingUserId = conversationId ? (typingUsers[conversationId] ?? null) : null
   const isTyping = typingUserId !== null && typingUserId !== currentUserId
@@ -162,15 +177,13 @@ export function useChatPage(username: string) {
         : null,
     })
 
-    startTransition(async () => {
-      addOptimisticMessage(optMessage)
-      await sendMessageMutation.mutateAsync({
-        id: messageId,
-        conversationId,
-        content,
-        replyToId: replyingTo?.id,
-        replyToMessage: replyingTo ?? undefined,
-      })
+    sendMessageMutation.mutate({
+      id: messageId,
+      conversationId,
+      content,
+      replyToId: replyingTo?.id,
+      replyToMessage: replyingTo ?? undefined,
+      optimisticMessage: optMessage,
     })
 
     setReplyingTo(null)
@@ -190,26 +203,25 @@ export function useChatPage(username: string) {
       audioDuration: duration,
     })
 
-    startTransition(async () => {
-      addOptimisticMessage(optMessage)
-      try {
-        const result = await audioUpload.mutateAsync({ blob, duration, conversationId })
-        await sendMessageMutation.mutateAsync({
-          id: messageId,
-          conversationId,
-          content: "🎤 Mensagem de voz",
-          type: "audio",
-          audioUrl: result.publicUrl,
-          audioDuration: duration,
-        })
-      } catch {
-        toast.error("Falha ao enviar áudio", {
-          description: "Não foi possível fazer o upload do áudio. Tente novamente.",
-          position: "bottom-center",
-          className: "mb-24",
-        })
-      }
-    })
+    insertOptimisticIntoCache(optMessage)
+
+    try {
+      const result = await audioUpload.mutateAsync({ blob, duration, conversationId })
+      await sendMessageMutation.mutateAsync({
+        id: messageId,
+        conversationId,
+        content: "🎤 Mensagem de voz",
+        type: "audio",
+        audioUrl: result.publicUrl,
+        audioDuration: duration,
+      })
+    } catch {
+      toast.error("Falha ao enviar áudio", {
+        description: "Não foi possível fazer o upload do áudio. Tente novamente.",
+        position: "bottom-center",
+        className: "mb-24",
+      })
+    }
   }
 
   const handleSendImageMessage = async (file: File) => {
@@ -223,25 +235,24 @@ export function useChatPage(username: string) {
       imageUrl: URL.createObjectURL(file),
     })
 
-    startTransition(async () => {
-      addOptimisticMessage(optMessage)
-      try {
-        const result = await imageUpload.mutateAsync({ file, conversationId })
-        await sendMessageMutation.mutateAsync({
-          id: messageId,
-          conversationId,
-          content: "",
-          type: "image",
-          imageUrl: result.publicUrl,
-        })
-      } catch {
-        toast.error("Falha ao enviar imagem", {
-          description: "Não foi possível fazer o upload. Tente novamente.",
-          position: "bottom-center",
-          className: "mb-24",
-        })
-      }
-    })
+    insertOptimisticIntoCache(optMessage)
+
+    try {
+      const result = await imageUpload.mutateAsync({ file, conversationId })
+      await sendMessageMutation.mutateAsync({
+        id: messageId,
+        conversationId,
+        content: "",
+        type: "image",
+        imageUrl: result.publicUrl,
+      })
+    } catch {
+      toast.error("Falha ao enviar imagem", {
+        description: "Não foi possível fazer o upload. Tente novamente.",
+        position: "bottom-center",
+        className: "mb-24",
+      })
+    }
   }
 
   const handleTyping = () => {
@@ -278,7 +289,7 @@ export function useChatPage(username: string) {
     targetUser,
     conversationId,
 
-    messages: optimisticMessages,
+    messages,
 
     isTyping,
     replyingTo,

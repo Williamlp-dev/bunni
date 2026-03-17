@@ -22,6 +22,7 @@ type SendMessageParams = {
   replyToId?: string
   replyToMessage?: Message
   id?: string
+  optimisticMessage?: Message
 }
 
 type UseMessagesOptions = {
@@ -111,6 +112,33 @@ export function useSendMessage() {
       if (error) throw error
       return data
     },
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: messagesKeys.list(variables.conversationId) })
+
+      const previousData = queryClient.getQueryData<InfiniteMessagesData>(
+        messagesKeys.list(variables.conversationId)
+      )
+
+      if (variables.optimisticMessage) {
+        queryClient.setQueryData<InfiniteMessagesData>(
+          messagesKeys.list(variables.conversationId),
+          (old) => {
+            if (!old?.pages?.length) return old
+            const lastPageIndex = old.pages.length - 1
+            return {
+              ...old,
+              pages: old.pages.map((page, i) =>
+                i === lastPageIndex
+                  ? { ...page, messages: [...page.messages, variables.optimisticMessage!] }
+                  : page
+              ),
+            }
+          }
+        )
+      }
+
+      return { previousData }
+    },
     onSuccess: (realMessage, variables) => {
       if (!realMessage) return
 
@@ -122,13 +150,14 @@ export function useSendMessage() {
           const lastPageIndex = old.pages.length - 1
           const lastPage = old.pages[lastPageIndex]
 
-          // Since the client sets the ID beforehand, we just need to ensure we don't duplicate
           const alreadyExists = lastPage.messages.some(
             (m: Message) => m.id === realMessage.id
           )
 
           const updatedMessages = alreadyExists
-            ? lastPage.messages
+            ? lastPage.messages.map((m: Message) =>
+                m.id === realMessage.id ? realMessage : m
+              )
             : [...lastPage.messages, realMessage]
 
           return {
@@ -141,6 +170,14 @@ export function useSendMessage() {
           }
         }
       )
+    },
+    onError: (_error, variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(
+          messagesKeys.list(variables.conversationId),
+          context.previousData
+        )
+      }
     },
   })
 }
