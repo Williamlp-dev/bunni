@@ -88,11 +88,18 @@ function ChatSkeleton() {
       <div className="flex-1 overflow-hidden flex flex-col relative w-full pt-10">
         <MessageListSkeleton />
       </div>
-      <div className="h-16 border-t border-border/50 bg-background/95 p-3 flex items-center gap-2">
-        <div className="flex-1 max-w-2xl mx-auto flex items-center gap-2 opacity-50 pointer-events-none">
-          <div className="size-10 rounded-full bg-muted/60 animate-pulse" />
-          <div className="h-10 grow rounded-full bg-muted/60 animate-pulse" />
-          <div className="size-10 rounded-full bg-muted/60 animate-pulse shrink-0" />
+      <div className="flex flex-col bg-background border-t border-border">
+        <div className="flex items-center gap-4 px-6 py-2 h-20 opacity-50 pointer-events-none">
+          <div className="flex items-center gap-2">
+            <div className="size-9 rounded-lg bg-muted/60 animate-pulse" />
+            <div className="size-9 rounded-lg bg-muted/60 animate-pulse" />
+          </div>
+          <div className="relative flex-1">
+            <div className="h-10 w-full rounded-md bg-muted/60 animate-pulse" />
+          </div>
+          <div className="relative flex items-center justify-center size-8 shrink-0">
+            <div className="size-8 rounded-lg bg-muted/60 animate-pulse" />
+          </div>
         </div>
       </div>
     </main>
