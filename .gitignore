@@ -29,5 +29,5 @@ node_modules/
 
 # Arquivos de ambiente comuns (Garantia de segurança)
 .env
-.env.local
+.env.development
 .env.*.local
