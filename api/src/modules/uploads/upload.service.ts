@@ -1,7 +1,8 @@
 import { AwsClient } from "aws4fetch"
 import { env } from "@/env"
 import type { PresignedUrlBody, PresignedUrlResponse } from "@/modules/uploads/upload.model"
-import { MAX_AUDIO_DURATION_SECONDS } from "@/modules/uploads/upload.model"
+import { MAX_AUDIO_DURATION_SECONDS, AVATAR_CONTENT_TYPES } from "@/modules/uploads/upload.model"
+import type { AvatarContentType } from "@/modules/uploads/upload.model"
 
 export class UploadServiceError extends Error {
   constructor(
@@ -48,7 +49,7 @@ export async function generatePresignedUrl(
   }
 
   const { subfolder, extension } = resolveSubfolder(contentType)
-  const key = `${conversationId}/${subfolder}/${userId}-${Date.now()}.${extension}`
+  const key = `conversations/${conversationId}/${subfolder}/${userId}-${Date.now()}.${extension}`
 
   const url = new URL(
     `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${env.R2_BUCKET_NAME}/${key}`
@@ -72,4 +73,37 @@ export async function deleteFromR2(key: string): Promise<void> {
   )
 
   await r2Client.fetch(url.toString(), { method: "DELETE" })
+}
+
+const AVATAR_EXT_MAP: Record<AvatarContentType, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+}
+
+export async function generateAvatarPresignedUrl(
+  userId: string,
+  contentType: AvatarContentType
+): Promise<PresignedUrlResponse> {
+  if (!AVATAR_CONTENT_TYPES.includes(contentType)) {
+    throw new UploadServiceError(`Unsupported avatar content type: ${contentType}`, "INVALID_CONTENT_TYPE")
+  }
+
+  const ext = AVATAR_EXT_MAP[contentType]
+  const key = `avatars/${userId}-${Date.now()}.${ext}`
+
+  const url = new URL(
+    `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${env.R2_BUCKET_NAME}/${key}`
+  )
+  url.searchParams.set("X-Amz-Expires", "3600")
+
+  const signed = await r2Client.sign(new Request(url, { method: "PUT" }), {
+    aws: { signQuery: true },
+  })
+
+  return {
+    uploadUrl: signed.url,
+    publicUrl: `${env.R2_PUBLIC_DOMAIN}/${key}`,
+    key,
+  }
 }

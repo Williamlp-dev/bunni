@@ -1,5 +1,11 @@
 import { t, type Static } from "elysia"
 
+export const UpdateBioBodySchema = t.Object({
+  bio: t.Union([t.String({ maxLength: 255 }), t.Null()]),
+})
+
+export type UpdateBioBody = Static<typeof UpdateBioBodySchema>
+
 export const UserBasicSchema = t.Object({
   id: t.String({ format: "uuid" }),
   name: t.Union([t.String(), t.Null()]),

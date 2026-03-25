@@ -168,12 +168,12 @@ export function useChatPage(username: string) {
       type: "text",
       replyTo: replyingTo
         ? ({
-            id: replyingTo.id,
-            content: replyingTo.content,
-            sender: { ...replyingTo.sender },
-            createdAt: replyingTo.createdAt,
-            deletedAt: replyingTo.deletedAt,
-          } as any)
+          id: replyingTo.id,
+          content: replyingTo.content,
+          sender: { ...replyingTo.sender },
+          createdAt: replyingTo.createdAt,
+          deletedAt: replyingTo.deletedAt,
+        } as any)
         : null,
     })
 

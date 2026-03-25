@@ -6,6 +6,8 @@ import { friendRequests } from "@/database/schema/friend-requests"
 import { eq, and, or, ilike, ne, sql } from "drizzle-orm"
 import { UserServiceError } from "@/shared/errors/user.errors"
 import { sendToUser } from "@/modules/websocket/connection-manager"
+import { deleteFromR2 } from "@/modules/uploads/upload.service"
+import { env } from "@/env"
 
 const USER_FIELDS = {
   id: users.id,
@@ -13,6 +15,7 @@ const USER_FIELDS = {
   username: users.username,
   displayUsername: users.displayUsername,
   image: users.image,
+  bio: users.bio,
 }
 
 export async function searchUsers(query: string, currentUserId: string, limit = 20) {
@@ -146,4 +149,31 @@ export async function notifyOnlineStatus(userId: string, isOnline: boolean): Pro
   for (const { friendId } of friendIds) {
     sendToUser(friendId, isOnline ? "user:online" : "user:offline", { userId })
   }
+}
+
+export async function updateAvatar(userId: string, key: string): Promise<{ image: string }> {
+  const [currentUser] = await db
+    .select({ image: users.image })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+
+  const newPublicUrl = `${env.R2_PUBLIC_DOMAIN}/${key}`
+
+  if (currentUser?.image && currentUser.image.startsWith(env.R2_PUBLIC_DOMAIN)) {
+    const oldKey = currentUser.image.slice(env.R2_PUBLIC_DOMAIN.length + 1)
+    await deleteFromR2(oldKey).catch(() => null)
+  }
+
+  await db.update(users).set({ image: newPublicUrl }).where(eq(users.id, userId))
+
+  return { image: newPublicUrl }
+}
+
+export async function updateBio(userId: string, bio: string | null): Promise<{ bio: string | null }> {
+  const sanitized = bio?.trim() || null
+
+  await db.update(users).set({ bio: sanitized }).where(eq(users.id, userId))
+
+  return { bio: sanitized }
 }

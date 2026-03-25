@@ -1,5 +1,5 @@
 import { randomUUIDv7 } from "bun"
-import { pgTable, text, timestamp, boolean, uuid } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, boolean, varchar } from "drizzle-orm/pg-core"
 
 export const users = pgTable("users", {
   id: text("id").primaryKey().$defaultFn(() => randomUUIDv7()),
@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   image: text("image"),
   username: text("username").notNull().unique(),
   displayUsername: text("display_username").notNull().unique(),
+  bio: varchar("bio", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

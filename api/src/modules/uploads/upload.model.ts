@@ -9,6 +9,9 @@ export type AllowedContentType =
   | "image/png"
   | "image/webp"
 
+export const AVATAR_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"] as const
+export type AvatarContentType = (typeof AVATAR_CONTENT_TYPES)[number]
+
 export const PresignedUrlBodySchema = t.Object({
   contentType: t.Union([
     t.Literal("audio/webm"),

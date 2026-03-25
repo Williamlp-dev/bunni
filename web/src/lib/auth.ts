@@ -1,12 +1,14 @@
 import { createAuthClient } from "better-auth/react"
-import { usernameClient } from "better-auth/client/plugins"
+import { usernameClient, inferAdditionalFields } from "better-auth/client/plugins"
 import { queryOptions } from "@tanstack/react-query"
+import type { auth as serverAuth } from "../../../api/src/auth"
 
 export const auth = createAuthClient({
   baseURL: import.meta.env.VITE_PUBLIC_API_URL as string,
   basePath: "/auth",
   plugins: [
-    usernameClient()
+    usernameClient(),
+    inferAdditionalFields<typeof serverAuth>(),
   ],
   session: {
     cookieCache: {
