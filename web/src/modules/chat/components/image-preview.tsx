@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { ZoomIn } from "lucide-react"
 import { Dialog, DialogTrigger, DialogPopup } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
@@ -10,13 +9,13 @@ type ImagePreviewProps = {
   variant?: "sent" | "received"
 }
 
-export function ImagePreview({ src, alt = "Imagem", className, variant = "received" }: ImagePreviewProps) {
+export function ImagePreview({ src, alt = "Imagem", className, variant }: ImagePreviewProps) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [hasError, setHasError] = useState(false)
 
   if (hasError) {
     return (
-      <div className={cn("flex items-center justify-center w-48 h-32 rounded-xl bg-muted text-muted-foreground text-xs", className)}>
+      <div className={cn("flex items-center justify-center w-64 h-48 rounded-xl bg-muted/50 text-muted-foreground text-xs", className)}>
         Imagem indisponível
       </div>
     )
@@ -25,10 +24,14 @@ export function ImagePreview({ src, alt = "Imagem", className, variant = "receiv
   return (
     <Dialog>
       <DialogTrigger
-        className={cn("relative block rounded-xl overflow-hidden cursor-zoom-in group/img", className)}
+        className={cn(
+          "relative block rounded-2xl overflow-hidden cursor-pointer",
+          "transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]",
+          className
+        )}
       >
         {!isLoaded && (
-          <div className="w-48 h-36 rounded-xl bg-muted animate-pulse" />
+          <div className="w-64 h-48 rounded-2xl animate-pulse" />
         )}
         <img
           src={src}
@@ -36,16 +39,11 @@ export function ImagePreview({ src, alt = "Imagem", className, variant = "receiv
           onLoad={() => setIsLoaded(true)}
           onError={() => setHasError(true)}
           className={cn(
-            "max-w-[240px] max-h-[320px] w-auto h-auto rounded-xl object-cover transition-opacity duration-200",
-            isLoaded ? "opacity-100" : "opacity-0 absolute inset-0",
-            variant === "sent" ? "border border-primary-foreground/20" : "border border-border/40"
+            "max-w-[280px] max-h-[360px] w-auto h-auto rounded-2xl object-cover transition-all duration-300 ease-out",
+            isLoaded ? "opacity-100" : "opacity-0 blur-sm absolute inset-0",
+            variant === "sent" ? "border-2 border-primary" : "border border-black/10 dark:border-white/10"
           )}
         />
-        {isLoaded && (
-          <div className="absolute inset-0 bg-transparent group-hover/img:bg-foreground/20 transition-colors duration-150 flex items-center justify-center rounded-xl">
-            <ZoomIn className="text-secondary opacity-0 group-hover/img:opacity-100 transition-opacity duration-150 size-6 drop-shadow" />
-          </div>
-        )}
       </DialogTrigger>
 
       <DialogPopup className="max-w-[90vw] max-h-[90vh] w-auto p-0 overflow-hidden bg-background/90 border-border/20 flex items-center justify-center" showCloseButton bottomStickOnMobile={false}>

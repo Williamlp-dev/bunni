@@ -73,9 +73,11 @@ export function MessageBubble({
         <div className="relative group/bubble min-w-0">
           <MessageContent
             className={cn(
-              isSent
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-foreground",
+              type === "image" && !replyTo
+                ? "p-0 bg-transparent shadow-none"
+                : isSent
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-foreground",
               "rounded-2xl",
               replyTo && "p-1.5 flex flex-col gap-0.5"
             )}
