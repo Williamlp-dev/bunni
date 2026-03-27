@@ -32,13 +32,21 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
     {
       auth: true,
       query: UserSearchQuerySchema,
-      detail: { tags: ["Users"], description: "Buscar usuários" },
+      detail: {
+        tags: ["Users"],
+        summary: "Buscar usuários",
+        description: "Pesquisa usuários pelo nome ou username. Retorna uma lista paginada de usuários que correspondem ao termo buscado, excluindo o próprio usuário autenticado e usuários que ele bloqueou.",
+      },
     })
 
   .get("/blocked", async ({ user }) => ({ blocked: await userService.getBlockedUsers(user.id) }),
     {
       auth: true,
-      detail: { tags: ["Users"], description: "Listar bloqueados" },
+      detail: {
+        tags: ["Users"],
+        summary: "Listar usuários bloqueados",
+        description: "Retorna todos os usuários que o usuário autenticado bloqueou. Esses usuários não aparecem em buscas e não podem iniciar conversas.",
+      },
     })
 
   .get("/:username", async ({ params, set }) => {
@@ -48,21 +56,33 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
   }, {
     auth: true,
     params: UsernameParamSchema,
-    detail: { tags: ["Users"], description: "Buscar por username" },
+    detail: {
+      tags: ["Users"],
+      summary: "Buscar perfil por username",
+      description: "Retorna as informações públicas de um usuário a partir do seu username único. Útil para visualizar perfis e verificar disponibilidade de usernames.",
+    },
   })
 
   .post("/:id/block", async ({ params, user }) => { await userService.blockUser(user.id, params.id); return { success: true } },
     {
       auth: true,
       params: UUIDParamSchema,
-      detail: { tags: ["Users"], description: "Bloquear usuário" },
+      detail: {
+        tags: ["Users"],
+        summary: "Bloquear usuário",
+        description: "Bloqueia um usuário pelo seu ID. Após o bloqueio, o usuário bloqueado não consegue enviar mensagens, pedidos de amizade ou visualizar o perfil do usuário autenticado.",
+      },
     })
 
   .delete("/:id/block", async ({ params, user }) => { await userService.unblockUser(user.id, params.id); return { success: true } },
     {
       auth: true,
       params: UUIDParamSchema,
-      detail: { tags: ["Users"], description: "Desbloquear usuário" },
+      detail: {
+        tags: ["Users"],
+        summary: "Desbloquear usuário",
+        description: "Remove o bloqueio de um usuário previamente bloqueado. Após o desbloqueio, o usuário volta a ter acesso normal às funcionalidades.",
+      },
     })
 
   .post("/avatar/presigned-url", async ({ body, user }) => {
@@ -76,7 +96,11 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         t.Literal("image/webp"),
       ]),
     }),
-    detail: { tags: ["Users"], description: "Gerar URL de upload para avatar" },
+    detail: {
+      tags: ["Users"],
+      summary: "Gerar URL de upload para avatar",
+      description: "Gera uma URL pré-assinada temporária no Cloudflare R2 para upload direto do avatar do usuário. Suporta os formatos JPEG, PNG e WebP. Após o upload, use a rota PATCH /users/avatar para vincular a imagem ao perfil.",
+    },
   })
 
   .patch("/avatar", async ({ body, user }) => {
@@ -84,7 +108,11 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
   }, {
     auth: true,
     body: t.Object({ key: t.String({ minLength: 1 }) }),
-    detail: { tags: ["Users"], description: "Atualizar avatar do usuário" },
+    detail: {
+      tags: ["Users"],
+      summary: "Atualizar avatar",
+      description: "Atualiza o avatar do usuário autenticado fornecendo a key do arquivo já enviado ao Cloudflare R2. Deve ser chamado após o upload via URL pré-assinada.",
+    },
   })
 
   .patch("/bio", async ({ body, user }) => {
@@ -92,5 +120,9 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
   }, {
     auth: true,
     body: UpdateBioBodySchema,
-    detail: { tags: ["Users"], description: "Atualizar bio do usuário" },
+    detail: {
+      tags: ["Users"],
+      summary: "Atualizar bio do perfil",
+      description: "Atualiza a biografia (descrição pessoal) exibida no perfil do usuário autenticado. Aceita texto simples com limite de caracteres definido na validação.",
+    },
   })

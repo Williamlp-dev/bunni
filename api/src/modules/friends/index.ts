@@ -36,26 +36,83 @@ export const friendsRoutes = new Elysia({ prefix: "/friends" })
   }, {
     auth: true,
     body: UsernameBodySchema,
-    detail: { tags: ["Friends"], description: "Enviar pedido de amizade" },
+    detail: {
+      tags: ["Friends"],
+      summary: "Enviar pedido de amizade",
+      description: "Envia um pedido de amizade para outro usuário a partir do seu username. O pedido ficará pendente até ser aceito ou recusado pelo destinatário. Retorna um erro se o usuário já for amigo, se já existe um pedido pendente ou se o usuário está bloqueado.",
+    },
   })
 
   .get("/requests/pending", async ({ user }) => ({ requests: await friendService.getPendingRequests(user.id) }),
-    { auth: true, detail: { tags: ["Friends"], description: "Listar pedidos recebidos" } })
+    {
+      auth: true,
+      detail: {
+        tags: ["Friends"],
+        summary: "Listar pedidos recebidos",
+        description: "Retorna todos os pedidos de amizade pendentes que o usuário autenticado recebeu e ainda não respondeu. Útil para exibir notificações e a tela de pedidos.",
+      },
+    })
 
   .get("/requests/sent", async ({ user }) => ({ requests: await friendService.getSentRequests(user.id) }),
-    { auth: true, detail: { tags: ["Friends"], description: "Listar pedidos enviados" } })
+    {
+      auth: true,
+      detail: {
+        tags: ["Friends"],
+        summary: "Listar pedidos enviados",
+        description: "Retorna todos os pedidos de amizade enviados pelo usuário autenticado que ainda estão aguardando resposta. Permite que o usuário veja e cancele pedidos em aberto.",
+      },
+    })
 
   .post("/request/:id/accept", async ({ params, user }) => ({ friendship: await friendService.acceptFriendRequest(params.id, user.id) }),
-    { auth: true, params: UUIDParamSchema, detail: { tags: ["Friends"], description: "Aceitar pedido" } })
+    {
+      auth: true,
+      params: UUIDParamSchema,
+      detail: {
+        tags: ["Friends"],
+        summary: "Aceitar pedido de amizade",
+        description: "Aceita um pedido de amizade recebido pelo seu ID. Após aceitar, os dois usuários se tornam amigos e podem iniciar conversas entre si.",
+      },
+    })
 
   .post("/request/:id/reject", async ({ params, user }) => { await friendService.rejectFriendRequest(params.id, user.id); return { success: true } },
-    { auth: true, params: UUIDParamSchema, detail: { tags: ["Friends"], description: "Recusar pedido" } })
+    {
+      auth: true,
+      params: UUIDParamSchema,
+      detail: {
+        tags: ["Friends"],
+        summary: "Recusar pedido de amizade",
+        description: "Recusa um pedido de amizade recebido. O pedido é removido e o remetente poderá enviar um novo pedido no futuro.",
+      },
+    })
 
   .delete("/request/:id", async ({ params, user }) => { await friendService.cancelFriendRequest(params.id, user.id); return { success: true } },
-    { auth: true, params: UUIDParamSchema, detail: { tags: ["Friends"], description: "Cancelar pedido enviado" } })
+    {
+      auth: true,
+      params: UUIDParamSchema,
+      detail: {
+        tags: ["Friends"],
+        summary: "Cancelar pedido enviado",
+        description: "Cancela e remove um pedido de amizade enviado pelo usuário autenticado que ainda não foi respondido. Somente o remetente original pode cancelar o pedido.",
+      },
+    })
 
   .get("/", async ({ user }) => ({ friends: await friendService.getFriends(user.id) }),
-    { auth: true, detail: { tags: ["Friends"], description: "Listar amigos" } })
+    {
+      auth: true,
+      detail: {
+        tags: ["Friends"],
+        summary: "Listar amigos",
+        description: "Retorna a lista completa de amigos do usuário autenticado, incluindo informações de perfil de cada amigo como nome, username e avatar.",
+      },
+    })
 
   .delete("/:id", async ({ params, user }) => { await friendService.removeFriend(user.id, params.id); return { success: true } },
-    { auth: true, params: UUIDParamSchema, detail: { tags: ["Friends"], description: "Remover amizade" } })
+    {
+      auth: true,
+      params: UUIDParamSchema,
+      detail: {
+        tags: ["Friends"],
+        summary: "Remover amigo",
+        description: "Remove a amizade entre o usuário autenticado e outro usuário pelo ID. Ambos os usuários perdem a conexão de amizade. As mensagens trocadas anteriormente não são afetadas.",
+      },
+    })

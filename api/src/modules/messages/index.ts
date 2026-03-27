@@ -74,7 +74,11 @@ export const messagesRoutes = new Elysia({ prefix: "/messages" })
       auth: true,
       params: ConversationIdParamSchema,
       body: SendMessageBodySchema,
-      detail: { tags: ["Messages"], description: "Enviar mensagem" },
+      detail: {
+        tags: ["Messages"],
+        summary: "Enviar mensagem",
+        description: "Envia uma nova mensagem em uma conversa. Suporta múltiplos tipos de conteúdo: texto, imagem e áudio. Após o envio, a mensagem é transmitida em tempo real a todos os participantes da conversa via WebSocket. Opcionalmente, pode ser uma resposta a outra mensagem informando o `replyToId`.",
+      },
     }
   )
   .get(
@@ -91,7 +95,11 @@ export const messagesRoutes = new Elysia({ prefix: "/messages" })
       auth: true,
       params: ConversationIdParamSchema,
       query: PaginationQuerySchema,
-      detail: { tags: ["Messages"], description: "Listar mensagens" },
+      detail: {
+        tags: ["Messages"],
+        summary: "Listar mensagens",
+        description: "Retorna as mensagens de uma conversa com paginação baseada em cursor. Use o parâmetro `after` com o ID da última mensagem recebida para carregar mensagens mais antigas (scroll infinito). O parâmetro `limit` controla quantas mensagens são retornadas por vez (padrão: 50).",
+      },
     }
   )
   .delete(
@@ -109,7 +117,11 @@ export const messagesRoutes = new Elysia({ prefix: "/messages" })
     {
       auth: true,
       params: MessageIdParamSchema,
-      detail: { tags: ["Messages"], description: "Deletar mensagem" },
+      detail: {
+        tags: ["Messages"],
+        summary: "Deletar mensagem para todos",
+        description: "Deleta permanentemente uma mensagem pelo seu ID. Somente o autor da mensagem pode deletá-la. Após a exclusão, todos os participantes da conversa são notificados via WebSocket com o evento `message:deleted`.",
+      },
     }
   )
   .post(
@@ -120,7 +132,11 @@ export const messagesRoutes = new Elysia({ prefix: "/messages" })
     {
       auth: true,
       body: BatchMessageIdsSchema,
-      detail: { tags: ["Messages"], description: "Apagar mensagens para mim" },
+      detail: {
+        tags: ["Messages"],
+        summary: "Apagar mensagens para mim",
+        description: "Oculta uma ou mais mensagens apenas para o usuário autenticado, sem afetar a visualização dos outros participantes da conversa. As mensagens continuam existindo no banco de dados. Aceita um array de IDs para operação em lote.",
+      },
     }
   )
   .post(
@@ -131,7 +147,11 @@ export const messagesRoutes = new Elysia({ prefix: "/messages" })
     {
       auth: true,
       body: BatchMessageIdsSchema,
-      detail: { tags: ["Messages"], description: "Desfazer apagar para mim" },
+      detail: {
+        tags: ["Messages"],
+        summary: "Desfazer apagar para mim",
+        description: "Restaura a visibilidade de mensagens que foram apagadas apenas para o usuário autenticado. Aceita um array de IDs das mensagens que devem ser reexibidas.",
+      },
     }
   )
   .post(
@@ -151,6 +171,10 @@ export const messagesRoutes = new Elysia({ prefix: "/messages" })
     {
       auth: true,
       body: BatchMessageIdsSchema,
-      detail: { tags: ["Messages"], description: "Apagar mensagens para todos" },
+      detail: {
+        tags: ["Messages"],
+        summary: "Apagar mensagens para todos",
+        description: "Deleta permanentemente uma ou mais mensagens para todos os participantes da conversa. Somente o autor pode deletar suas próprias mensagens. Cada exclusão dispara o evento `message:deleted` via WebSocket. Aceita um array de IDs para exclusão em lote.",
+      },
     }
   )

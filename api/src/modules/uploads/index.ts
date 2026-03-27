@@ -25,6 +25,10 @@ export const uploadsRoutes = new Elysia({ prefix: "/uploads" })
     {
       auth: true,
       body: PresignedUrlBodySchema,
-      detail: { tags: ["Uploads"], description: "Generate presigned URL for R2 upload" },
+      detail: {
+        tags: ["Uploads"],
+        summary: "Gerar URL de upload",
+        description: "Gera uma URL pré-assinada temporária no Cloudflare R2 para upload direto de arquivos de mídia (imagens e áudios). A URL gerada é válida por um período limitado e permite que o cliente faça o upload diretamente ao storage sem passar pelo servidor. Após o upload, use a key retornada para associar o arquivo à mensagem ou perfil.",
+      },
     }
   )

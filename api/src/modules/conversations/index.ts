@@ -34,7 +34,11 @@ export const conversationsRoutes = new Elysia({ prefix: "/conversations" })
     {
       auth: true,
       body: t.Object({ participantId: t.String({ format: "uuid" }) }),
-      detail: { tags: ["Conversations"], description: "Criar conversa" },
+      detail: {
+        tags: ["Conversations"],
+        summary: "Criar nova conversa",
+        description: "Cria uma nova conversa direta (DM) entre o usuário autenticado e outro usuário pelo ID. Se uma conversa entre os dois já existir, retorna a conversa existente. Os dois usuários precisam ser amigos para iniciar uma conversa.",
+      },
     }
   )
   .get("/", async ({ user }) => {
@@ -42,7 +46,11 @@ export const conversationsRoutes = new Elysia({ prefix: "/conversations" })
     return { conversations }
   }, {
     auth: true,
-    detail: { tags: ["Conversations"], description: "Listar conversas" },
+    detail: {
+      tags: ["Conversations"],
+      summary: "Listar conversas",
+      description: "Retorna todas as conversas do usuário autenticado, ordenadas pela última mensagem recebida. Inclui informações do participante e uma prévia da última mensagem de cada conversa.",
+    },
   })
   .get(
     "/:id",
@@ -57,7 +65,11 @@ export const conversationsRoutes = new Elysia({ prefix: "/conversations" })
     {
       auth: true,
       params: UUIDParamSchema,
-      detail: { tags: ["Conversations"], description: "Buscar conversa específica" },
+      detail: {
+        tags: ["Conversations"],
+        summary: "Buscar conversa por ID",
+        description: "Retorna os detalhes completos de uma conversa específica pelo seu ID. O usuário autenticado precisa ser participante da conversa para acessá-la, caso contrário retorna 403.",
+      },
     }
   )
   .get(
@@ -66,6 +78,10 @@ export const conversationsRoutes = new Elysia({ prefix: "/conversations" })
     {
       auth: true,
       params: t.Object({ username: t.String() }),
-      detail: { tags: ["Conversations"], description: "Buscar ou criar conversa por username" },
+      detail: {
+        tags: ["Conversations"],
+        summary: "Buscar ou criar conversa por username",
+        description: "Busca uma conversa existente com o usuário do username informado. Se não existir, cria uma nova conversa automaticamente. Útil para navegar diretamente ao chat de um usuário a partir do seu perfil.",
+      },
     }
   )

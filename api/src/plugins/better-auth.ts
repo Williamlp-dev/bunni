@@ -43,7 +43,7 @@ export const OpenAPI = {
         for (const method of Object.keys(paths[path])) {
           const operation = (reference[key] as any)[method]
 
-          operation.tags = ['Better Auth']
+          operation.tags = ['Auth']
         }
       }
 
