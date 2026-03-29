@@ -60,7 +60,7 @@ export function MessageBubble({
           <div className="shrink-0">
             <Avatar className="size-8">
               <AvatarImage src={avatarSrc} />
-              <AvatarFallback className="text-xs font-bold">
+              <AvatarFallback delay={avatarSrc ? 200 : 0} className="text-xs font-bold">
                 {avatarFallback}
               </AvatarFallback>
             </Avatar>
