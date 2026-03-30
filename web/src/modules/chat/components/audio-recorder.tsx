@@ -221,7 +221,7 @@ export function AudioRecorderOverlay({ hideSendButton = false }: AudioRecorderOv
     <div
       data-state={isOpen ? 'open' : 'closed'}
       className={cn(
-        "absolute inset-0 z-10 flex items-center gap-2 rounded-md bg-background px-2 border border-input",
+        "absolute inset-0 z-10 flex items-center gap-2 rounded-md bg-background px-2 border border-input transition-all duration-(--duration-base) ease-out",
         "data-[state=closed]:opacity-0 data-[state=closed]:pointer-events-none data-[state=closed]:clip-path-[inset(0_0_0_100%)]",
         "data-[state=open]:opacity-100 data-[state=open]:clip-path-[inset(0_0_0_0)]"
       )}
@@ -253,24 +253,24 @@ export function AudioRecorderOverlay({ hideSendButton = false }: AudioRecorderOv
           type="button"
           variant="secondary"
           size="icon"
-          className="rounded-full size-9 shadow-sm"
+          className="rounded-full size-9 shadow-sm btn-press transition-all duration-(--duration-fast)"
           onClick={togglePause}
           aria-label={status === 'recording' ? 'Pause recording' : 'Resume recording'}
         >
           <div className="relative flex items-center justify-center size-full">
             <Pause
               className={cn(
-                'absolute size-4 fill-current',
+                'absolute size-4 fill-current transition-all duration-(--duration-fast)',
                 status === 'recording'
                   ? 'opacity-100 scale-100 blur-0'
-                  : 'opacity-0 scale-50 blur-sm'
+                  : 'opacity-0 scale-50 blur-xs'
               )}
             />
             <Play
               className={cn(
-                'absolute size-4 fill-current ml-1',
+                'absolute size-4 fill-current ml-1 transition-all duration-(--duration-fast)',
                 status === 'recording'
-                  ? 'opacity-0 scale-50 blur-sm'
+                  ? 'opacity-0 scale-50 blur-xs'
                   : 'opacity-100 scale-100 blur-0'
               )}
             />
@@ -281,7 +281,7 @@ export function AudioRecorderOverlay({ hideSendButton = false }: AudioRecorderOv
           <Button
             type="button"
             size="icon"
-            className="rounded-full size-9 shadow-sm animate-in zoom-in-50 duration-300"
+            className="rounded-full size-9 shadow-sm animate-in zoom-in-50 duration-(--duration-base) btn-press"
             onClick={send}
             aria-label="Send recording"
           >
@@ -322,7 +322,7 @@ export function AudioRecorderTrigger({ disabled, className, onSubmitBehavior = '
       variant="ghost"
       size="icon"
       className={cn(
-        'relative',
+        'relative btn-press transition-all duration-(--duration-fast)',
         isActive && 'bg-primary text-primary-foreground rotate-0 scale-100',
         className
       )}
@@ -332,15 +332,15 @@ export function AudioRecorderTrigger({ disabled, className, onSubmitBehavior = '
       <div className="relative flex items-center justify-center size-full">
         <Mic
           className={cn(
-            'absolute size-5',
-            isActive ? 'opacity-0 scale-50 blur-sm' : 'opacity-100 scale-100 blur-0'
+            'absolute size-5 transition-all duration-(--duration-fast)',
+            isActive ? 'opacity-0 scale-50 blur-xs' : 'opacity-100 scale-100 blur-0'
           )}
         />
 
         <Send
           className={cn(
-            'absolute size-5',
-            isActive ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-50 blur-sm'
+            'absolute size-5 transition-all duration-(--duration-fast)',
+            isActive ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-50 blur-xs'
           )}
         />
       </div>
