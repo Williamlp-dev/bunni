@@ -191,6 +191,7 @@ export function useChatPage(username: string) {
 
   const handleSendAudioMessage = async (blob: Blob, duration: number) => {
     if (!conversationId) return
+
     sendTypingStop(conversationId)
 
     const messageId = crypto.randomUUID()
@@ -217,7 +218,7 @@ export function useChatPage(username: string) {
       })
     } catch {
       toast.error("Falha ao enviar áudio", {
-        description: "Não foi possível fazer o upload do áudio. Tente novamente.",
+        description: "Ocorreu um erro no upload. Verifique sua conexão e tente novamente.",
         position: "bottom-center",
         className: "mb-24",
       })

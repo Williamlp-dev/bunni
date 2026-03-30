@@ -2,6 +2,7 @@
 import { cn } from '@/lib/utils'
 import { Mic, Pause, Play, Send, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 import React from 'react'
 
 const WAVE_BAR_COUNT = 40
@@ -124,6 +125,23 @@ export function AudioRecorderProvider({ onSend, children }: AudioRecorderProvide
     if (!recorder) return
 
     const currentDuration = duration
+
+    if (currentDuration < 1) {
+      if (recorder.state !== 'inactive') {
+        recorder.stop()
+      }
+      mediaRecorderRef.current = null
+      chunksRef.current = []
+      stopMediaStream()
+      setStatus('idle')
+      setDuration(0)
+      toast.error('Áudio muito curto', {
+        description: 'Grave pelo menos 1 segundo antes de enviar.',
+        position: 'bottom-center',
+        className: 'mb-24',
+      })
+      return
+    }
 
     recorder.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: recorder.mimeType })
