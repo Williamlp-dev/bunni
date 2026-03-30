@@ -22,72 +22,81 @@ export function SelectionHeader({
   className,
 }: SelectionHeaderProps) {
   return (
-    <header
-      className={cn(
-        "absolute inset-x-0 top-0 z-20 flex h-20 items-center justify-between px-6",
-        "bg-primary text-primary-foreground",
-        "animate-selection-bar-in will-change-[transform,opacity]",
-        className
-      )}
-    >
-      <div className="flex items-center gap-4">
-        <Button
-          onClick={onDeselect}
-          aria-label="Deselecionar"
-          variant="ghost"
-          size="icon"
-          className="text-primary-foreground hover:bg-primary-foreground/20 active:scale-95 transition-transform"
-        >
-          <X className="size-5" />
-        </Button>
-        <span className="text-sm font-bold uppercase tracking-wide">
-          {selectedCount} {selectedCount === 1 ? "selecionada" : "selecionadas"}
-        </span>
-      </div>
+    <div className="absolute inset-x-0 top-20 z-30 flex justify-center pointer-events-none px-4 sm:px-6">
+      <header
+        className={cn(
+          "pointer-events-auto flex items-center justify-between h-16 w-full max-w-2xl px-2 rounded-2xl",
+          "bg-foreground text-background shadow-2xl ring-1 ring-border/10",
+          "animate-selection-bar-in will-change-[transform,opacity]",
+          className
+        )}
+      >
+        <div className="flex items-center pl-1 pr-4 py-1">
+          <Button
+            onClick={onDeselect}
+            aria-label="Deselecionar"
+            variant="ghost"
+            size="icon"
+            className="text-background hover:bg-background/20 rounded-xl btn-press transition-all duration-(--duration-fast) size-10 mr-3"
+          >
+            <X className="size-4" />
+          </Button>
+          <div className="flex flex-col justify-center">
+            <span className="text-sm font-semibold leading-none tracking-tight">
+              {selectedCount}
+            </span>
+            <span className="text-[10px] font-medium opacity-70 uppercase tracking-wider leading-none mt-1">
+              {selectedCount === 1 ? "Selecionada" : "Selecionadas"}
+            </span>
+          </div>
+        </div>
 
-      <div className="flex items-center gap-2">
-        <Button
-          onClick={onCopy}
-          aria-label="Copiar mensagens"
-          variant="ghost"
-          size="icon"
-          className="text-primary-foreground hover:bg-primary-foreground/20 active:scale-95 transition-transform"
-        >
-          <Copy className="size-5" />
-        </Button>
-        <Button
-          onClick={onForward}
-          aria-label="Encaminhar mensagens"
-          variant="ghost"
-          size="icon"
-          className="text-primary-foreground hover:bg-primary-foreground/20 active:scale-95 transition-transform"
-          disabled={!onForward}
-        >
-          <Forward className="size-5" />
-        </Button>
-        {selectedCount === 1 && (
+        <div className="flex items-center gap-1.5 pr-1">
           <Button
-            onClick={onReply}
-            aria-label="Responder mensagem"
+            onClick={onCopy}
+            aria-label="Copiar mensagens"
             variant="ghost"
             size="icon"
-            className="text-primary-foreground hover:bg-primary-foreground/20 active:scale-95 transition-transform"
+            className="text-background hover:bg-background/20 rounded-xl btn-press transition-all duration-(--duration-fast) size-10"
           >
-            <Reply className="size-5" />
+            <Copy className="size-[18px]" />
           </Button>
-        )}
-        {onDelete && (
           <Button
-            onClick={onDelete}
-            aria-label="Apagar mensagens"
+            onClick={onForward}
+            aria-label="Encaminhar mensagens"
             variant="ghost"
             size="icon"
-            className="text-primary-foreground hover:bg-primary-foreground/20 active:scale-95 transition-transform"
+            className="text-background hover:bg-background/20 rounded-xl btn-press transition-all duration-(--duration-fast) size-10"
+            disabled={!onForward}
           >
-            <Trash2 className="size-5" />
+            <Forward className="size-[18px]" />
           </Button>
-        )}
-      </div>
-    </header>
+          {selectedCount === 1 && (
+            <Button
+              onClick={onReply}
+              aria-label="Responder mensagem"
+              variant="ghost"
+              size="icon"
+              className="text-background hover:bg-background/20 rounded-xl btn-press transition-all duration-(--duration-fast) size-10"
+            >
+              <Reply className="size-[18px]" />
+            </Button>
+          )}
+          {onDelete && (
+            <div className="pl-2 ml-1 border-l border-background/20">
+              <Button
+                onClick={onDelete}
+                aria-label="Apagar mensagens"
+                variant="ghost"
+                size="icon"
+                className="text-destructive hover:bg-destructive/20 hover:text-destructive rounded-xl btn-press transition-all duration-(--duration-fast) size-10"
+              >
+                <Trash2 className="size-[18px]" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </header>
+    </div>
   )
 }
