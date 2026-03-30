@@ -44,8 +44,22 @@ export function MessageBubble({
   replyTo,
   actionMenu,
   onReplyClick,
-}: MessageBubbleProps) {
+}: MessageBubbleProps): React.ReactElement {
   const isSent = variant === "sent"
+
+  const renderMessageMediaOrContent = () => {
+    if (children) return children
+
+    if (type === "audio" && audioUrl) {
+      return <AudioPlayer src={audioUrl} duration={audioDuration} variant={variant} />
+    }
+
+    if (type === "image" && imageUrl) {
+      return <ImagePreview src={imageUrl} variant={variant} />
+    }
+
+    return content
+  }
 
   return (
     <div
@@ -93,17 +107,7 @@ export function MessageBubble({
               />
             )}
             <div className={cn(replyTo && "px-2 pb-0.5 pt-0.5")}>
-              {children || (type === "audio" && audioUrl ? (
-                <AudioPlayer
-                  src={audioUrl}
-                  duration={audioDuration}
-                  variant={variant}
-                />
-              ) : type === "image" && imageUrl ? (
-                <ImagePreview src={imageUrl} variant={variant} />
-              ) : (
-                content
-              ))}
+              {renderMessageMediaOrContent()}
             </div>
           </MessageContent>
 

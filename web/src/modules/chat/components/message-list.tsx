@@ -30,6 +30,161 @@ type MessageListProps = {
   onLoadMore?: () => void
 }
 
+type MessageItemProps = {
+  message: Message
+  currentUserId: string
+  activeParticipantName?: string
+  isSelected: boolean
+  isSelectionMode: boolean
+  onReply: (message: Message) => void
+  onDeleteRequest: (messages: Message[]) => void
+  onEnterSelectionMode?: (message: Message) => void
+  onToggleSelect?: (message: Message) => void
+  onContentPointerDown: (e: React.PointerEvent) => void
+  onContentPointerUp: () => void
+  onContentPointerLeave: () => void
+  isLongPressTriggered: () => boolean
+  resetLongPressTrigger: () => void
+}
+
+function MessageItem({
+  message,
+  currentUserId,
+  activeParticipantName,
+  isSelected,
+  isSelectionMode,
+  onReply,
+  onDeleteRequest,
+  onEnterSelectionMode,
+  onToggleSelect,
+  onContentPointerDown,
+  onContentPointerUp,
+  onContentPointerLeave,
+  isLongPressTriggered,
+  resetLongPressTrigger
+}: MessageItemProps): React.ReactElement {
+  const isOwner = message.senderId === currentUserId
+  const isDeleted = !!message.deletedAt
+
+  const handleReplyClick = (messageId: string) => {
+    const element = document.getElementById(`message-${messageId}`)
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" })
+      element.classList.add("bg-primary/10")
+      setTimeout(() => {
+        element.classList.remove("bg-primary/10")
+      }, 1000)
+    }
+  }
+
+  const handleClick = () => {
+    if (isLongPressTriggered()) {
+      resetLongPressTrigger()
+      return
+    }
+
+    if (isSelectionMode) {
+      onToggleSelect?.(message)
+    }
+  }
+
+  return (
+    <div
+      id={`message-${message.id}`}
+      className={cn(
+        "relative flex items-center group transition-colors duration-500 rounded-lg py-1 animate-message-slide-up",
+        isOwner && "flex-row-reverse",
+      )}
+      onPointerDown={onContentPointerDown}
+      onPointerUp={onContentPointerUp}
+      onPointerLeave={onContentPointerLeave}
+      onClick={handleClick}
+    >
+      <div
+        className={cn(
+          "absolute inset-y-0 -inset-x-4 pointer-events-none transition-opacity duration-150 ease-out bg-primary/10",
+          isSelected ? "opacity-100" : "opacity-0"
+        )}
+      />
+      <div
+        className={cn(
+          "relative flex items-center justify-center shrink-0 overflow-hidden transition-[width,margin-right,opacity] duration-300 ease-ios",
+          isSelectionMode ? "w-6 mr-2 opacity-100" : "w-0 mr-0 opacity-0 pointer-events-none"
+        )}
+      >
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={() => onToggleSelect?.(message)}
+          className="size-5 rounded-full border-input data-[state=checked]:border-primary"
+        />
+      </div>
+      <div className="relative flex-1 min-w-0">
+        <MessageBubble
+          content={message.content}
+          type={message.type}
+          audioUrl={message.audioUrl}
+          audioDuration={message.audioDuration}
+          imageUrl={message.imageUrl}
+          variant={isOwner ? "sent" : "received"}
+          timestamp={formatTimestamp(message.createdAt)}
+          showAvatar={!isOwner}
+          avatarSrc={message.sender?.image || undefined}
+          avatarFallback={(message.sender?.name || message.sender?.displayUsername || activeParticipantName || "?").slice(0, 2).toUpperCase()}
+          replyTo={message.replyTo ? {
+            id: message.replyTo.id,
+            content: message.replyTo.content,
+            senderName: message.replyTo.sender?.name ?? message.replyTo.sender?.displayUsername ?? "Usuário",
+            deletedAt: message.replyTo.deletedAt
+          } : undefined}
+          onReplyClick={handleReplyClick}
+          actionMenu={
+            !isSelectionMode ? (
+              <div
+                onPointerDown={(e) => e.stopPropagation()}
+                onPointerUp={(e) => e.stopPropagation()}
+              >
+                <Menu>
+                  <MenuTrigger
+                    className="inline-flex items-center justify-center p-2 rounded-full bg-background border border-border hover:bg-muted cursor-pointer shadow-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ChevronDown className="size-4 text-muted-foreground" />
+                  </MenuTrigger>
+                  <MenuPopup
+                    align={isOwner ? "end" : "start"}
+                    sideOffset={4}
+                    collisionPadding={{ bottom: 80 }}
+                  >
+                    {!isDeleted && (
+                      <MenuItem onClick={() => onReply(message)}>
+                        <Reply className="size-4" />
+                        Responder
+                      </MenuItem>
+                    )}
+                    <MenuItem onClick={() => onEnterSelectionMode?.(message)}>
+                      <CheckSquare className="size-4" />
+                      Selecionar
+                    </MenuItem>
+                    <MenuItem
+                      variant="destructive"
+                      onClick={() => onDeleteRequest([message])}
+                    >
+                      <Trash2 className="size-4" />
+                      Apagar
+                    </MenuItem>
+                  </MenuPopup>
+                </Menu>
+              </div>
+            ) : undefined
+          }
+        >
+          {isDeleted && (<div className="flex items-center gap-2 italic opacity-80"><Ban className="size-4" /><span>Mensagem apagada</span></div>)}
+        </MessageBubble>
+      </div>
+    </div>
+  )
+}
+
 export function MessageListSkeleton(): React.ReactElement {
   return (
     <div className="flex flex-1 flex-col justify-end gap-3 px-4">
@@ -60,7 +215,7 @@ export function MessageList({
   hasNextPage,
   isFetchingNextPage,
   onLoadMore,
-}: MessageListProps) {
+}: MessageListProps): React.ReactElement {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const longPressTriggeredRef = useRef(false)
 
@@ -108,134 +263,30 @@ export function MessageList({
           <div className="flex-1" />
           <DateDivider date="Hoje" />
           <div className="h-6" />
-          {messages.map((message) => {
-            const isOwner = message.senderId === currentUserId
-            const isDeleted = !!message.deletedAt
-            const isSelected = selectedMessageIds?.has(message.id) ?? false
+          {messages.map((message) => (
+            <MessageItem
+              key={message.id}
+              message={message}
+              currentUserId={currentUserId}
+              activeParticipantName={activeParticipantName}
+              isSelected={selectedMessageIds?.has(message.id) ?? false}
+              isSelectionMode={isSelectionMode ?? false}
+              onReply={onReply}
+              onDeleteRequest={onDeleteRequest}
+              onEnterSelectionMode={onEnterSelectionMode}
+              onToggleSelect={onToggleSelect}
+              onContentPointerDown={(e) => handlePointerDown(e, message)}
+              onContentPointerUp={handlePointerUp}
+              onContentPointerLeave={handlePointerUp}
+              isLongPressTriggered={() => longPressTriggeredRef.current}
+              resetLongPressTrigger={() => { longPressTriggeredRef.current = false }}
+            />
+          ))}
 
-
-
-            const handleReplyClick = (messageId: string) => {
-              const element = document.getElementById(`message-${messageId}`)
-              if (element) {
-                element.scrollIntoView({ behavior: "smooth", block: "center" })
-                element.classList.add("bg-primary/10")
-                setTimeout(() => {
-                  element.classList.remove("bg-primary/10")
-                }, 1000)
-              }
-            }
-
-            const handleClick = () => {
-              if (longPressTriggeredRef.current) {
-                longPressTriggeredRef.current = false
-                return
-              }
-
-              if (isSelectionMode) {
-                onToggleSelect?.(message)
-              }
-            }
-
-            return (
-              <div
-                key={message.id}
-                id={`message-${message.id}`}
-                className={cn(
-                  "relative flex items-center group transition-colors duration-500 rounded-lg py-1",
-                  isOwner && "flex-row-reverse",
-                )}
-                onPointerDown={(e) => handlePointerDown(e, message)}
-                onPointerUp={handlePointerUp}
-                onPointerLeave={handlePointerUp}
-                onClick={handleClick}
-              >
-                <div
-                  className={cn(
-                    "absolute inset-y-0 -inset-x-4 pointer-events-none transition-opacity duration-150 ease-out bg-primary/10",
-                    isSelected ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <div
-                  className={cn(
-                    "relative flex items-center justify-center shrink-0 overflow-hidden transition-[width,margin-right,opacity] duration-300 ease-ios",
-                    isSelectionMode ? "w-6 mr-2 opacity-100" : "w-0 mr-0 opacity-0 pointer-events-none"
-                  )}
-                >
-                  <Checkbox
-                    checked={isSelected}
-                    onCheckedChange={() => onToggleSelect?.(message)}
-                    className="size-5 rounded-full border-input data-[state=checked]:border-primary"
-                  />
-                </div>
-                <div className="relative flex-1 min-w-0">
-                  <MessageBubble
-                    content={message.content}
-                    type={message.type}
-                    audioUrl={message.audioUrl}
-                    audioDuration={message.audioDuration}
-                    imageUrl={message.imageUrl}
-                    variant={isOwner ? "sent" : "received"}
-                    timestamp={formatTimestamp(message.createdAt)}
-                    showAvatar={!isOwner}
-                    avatarSrc={message.sender?.image || undefined}
-                    avatarFallback={(message.sender?.name || message.sender?.displayUsername || activeParticipantName || "?").slice(0, 2).toUpperCase()}
-                    replyTo={message.replyTo ? {
-                      id: message.replyTo.id,
-                      content: message.replyTo.content,
-                      senderName: message.replyTo.sender?.name ?? message.replyTo.sender?.displayUsername ?? "Usuário",
-                      deletedAt: message.replyTo.deletedAt
-                    } : undefined}
-                    onReplyClick={handleReplyClick}
-                    actionMenu={
-                      !isSelectionMode ? (
-                        <div
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onPointerUp={(e) => e.stopPropagation()}
-                        >
-                          <Menu>
-                            <MenuTrigger
-                              className="inline-flex items-center justify-center p-2 rounded-full bg-background border border-border hover:bg-muted cursor-pointer shadow-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <ChevronDown className="size-4 text-muted-foreground" />
-                            </MenuTrigger>
-                            <MenuPopup
-                              align={isOwner ? "end" : "start"}
-                              sideOffset={4}
-                              collisionPadding={{ bottom: 80 }}
-                            >
-                              {!isDeleted && (
-                                <MenuItem onClick={() => onReply(message)}>
-                                  <Reply className="size-4" />
-                                  Responder
-                                </MenuItem>
-                              )}
-                              <MenuItem onClick={() => onEnterSelectionMode?.(message)}>
-                                <CheckSquare className="size-4" />
-                                Selecionar
-                              </MenuItem>
-                              <MenuItem
-                                variant="destructive"
-                                onClick={() => onDeleteRequest([message])}
-                              >
-                                <Trash2 className="size-4" />
-                                Apagar
-                              </MenuItem>
-                            </MenuPopup>
-                          </Menu>
-                        </div>
-                      ) : undefined
-                    }
-                  >
-                    {isDeleted && (<div className="flex items-center gap-2 italic opacity-80"><Ban className="size-4" /><span>Mensagem apagada</span></div>)}
-                  </MessageBubble>
-                </div>
-              </div>
-            )
-          })}
-
-          <div key="typing-indicator" className="mt-4 mb-2"><TypingIndicator visible={isTyping} /></div>
+          <TypingIndicator 
+            isTyping={isTyping} 
+            lastMessageId={messages[messages.length - 1]?.id} 
+          />
           <ChatContainerScrollAnchor />
         </ChatContainerContent>
       </ChatContainerRoot>

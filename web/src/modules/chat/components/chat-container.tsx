@@ -16,22 +16,25 @@ export type ChatContainerScrollAnchorProps = {
   ref?: React.RefObject<HTMLDivElement>
 } & React.HTMLAttributes<HTMLDivElement>
 
+function supportsScrollBehavior(): boolean {
+  return "scrollBehavior" in document.documentElement.style
+}
+
 function useStickToBottom(containerRef: RefObject<HTMLDivElement | null>) {
   const isStuckRef = useRef(true)
   const isInitialRef = useRef(true)
+  const rafIdRef = useRef<number | null>(null)
 
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    const el = containerRef.current
-    if (!el) return
-    el.scrollTo({ top: el.scrollHeight, behavior })
-  }, [containerRef])
-
-  const checkIfStuck = useCallback(() => {
-    const el = containerRef.current
-    if (!el) return
-    const threshold = 40
-    isStuckRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < threshold
-  }, [containerRef])
+  const scrollToBottom = useCallback(
+    (behavior: ScrollBehavior = "smooth") => {
+      const el = containerRef.current
+      if (!el) return
+      isStuckRef.current = true
+      const resolvedBehavior = supportsScrollBehavior() ? behavior : "auto"
+      el.scrollTo({ top: el.scrollHeight, behavior: resolvedBehavior })
+    },
+    [containerRef],
+  )
 
   useEffect(() => {
     const el = containerRef.current
@@ -42,34 +45,59 @@ function useStickToBottom(containerRef: RefObject<HTMLDivElement | null>) {
       isInitialRef.current = false
     }
 
-    const observer = new MutationObserver(() => {
-      if (isStuckRef.current) {
-        scrollToBottom("smooth")
-      }
-    })
-
-    observer.observe(el, { childList: true, subtree: true, characterData: true })
+    const scheduleScroll = (behavior: ScrollBehavior) => {
+      if (!isStuckRef.current) return
+      if (rafIdRef.current !== null) return
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null
+        if (!isStuckRef.current) return
+        const container = containerRef.current
+        if (!container) return
+        const resolvedBehavior = supportsScrollBehavior() ? behavior : "auto"
+        container.scrollTo({ top: container.scrollHeight, behavior: resolvedBehavior })
+      })
+    }
 
     const handleScroll = () => {
-      checkIfStuck()
+      const distanceFromBottom = el.scrollHeight - Math.ceil(el.scrollTop) - el.clientHeight
+      isStuckRef.current = distanceFromBottom < 150
+    }
+
+    const resizeObserver = new ResizeObserver(() => scheduleScroll("smooth"))
+
+    const mutationObserver = new MutationObserver(() => {
+      scheduleScroll("smooth")
+    })
+
+    mutationObserver.observe(el, { childList: true, subtree: true })
+
+    const content = el.firstElementChild
+    if (content) {
+      resizeObserver.observe(content)
     }
 
     el.addEventListener("scroll", handleScroll, { passive: true })
 
     return () => {
-      observer.disconnect()
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
+      }
       el.removeEventListener("scroll", handleScroll)
+      mutationObserver.disconnect()
+      resizeObserver.disconnect()
     }
-  }, [containerRef, scrollToBottom, checkIfStuck])
+  }, [containerRef])
 
   return { scrollToBottom }
 }
+
 
 function ChatContainerRoot({
   children,
   className,
   ...props
-}: ChatContainerRootProps) {
+}: ChatContainerRootProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null)
   useStickToBottom(containerRef)
 
@@ -89,7 +117,7 @@ function ChatContainerContent({
   children,
   className,
   ...props
-}: ChatContainerContentProps) {
+}: ChatContainerContentProps): React.ReactElement {
   return (
     <div
       className={cn("flex w-full flex-col", className)}
@@ -103,7 +131,7 @@ function ChatContainerContent({
 function ChatContainerScrollAnchor({
   className,
   ...props
-}: ChatContainerScrollAnchorProps) {
+}: ChatContainerScrollAnchorProps): React.ReactElement {
   return (
     <div
       className={cn("h-px w-full shrink-0", className)}
