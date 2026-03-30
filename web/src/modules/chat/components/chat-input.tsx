@@ -59,7 +59,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
     <div className="flex flex-col bg-background border-t border-border">
       <div
         className={cn(
-          "grid ease-out",
+          "grid transition-all duration-(--duration-fast) ease-(--ease-snappy)",
           replyingTo ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
         )}
       >
@@ -82,7 +82,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
               onClick={onCancelReply}
               variant="ghost"
               size="icon"
-              className="hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground active:scale-95 ease-out"
+              className="hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground btn-press transition-all duration-(--duration-fast) ease-out"
             >
               <X className="size-4" />
             </Button>
@@ -173,7 +173,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
                 <div className="pointer-events-none absolute inset-0 flex items-center px-4 overflow-hidden">
                   <span
                     className={cn(
-                      "absolute whitespace-nowrap text-muted-foreground ease-out",
+                      "absolute whitespace-nowrap text-muted-foreground transition-all duration-(--duration-base) ease-(--ease-snappy)",
                       message ? "opacity-0 translate-y-0" : replyingTo ? "opacity-0 -translate-y-4" : "opacity-100 translate-y-0",
                     )}
                   >
@@ -181,7 +181,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
                   </span>
                   <span
                     className={cn(
-                      "absolute whitespace-nowrap text-muted-foreground ease-out",
+                      "absolute whitespace-nowrap text-muted-foreground transition-all duration-(--duration-base) ease-(--ease-snappy)",
                       message ? "opacity-0 translate-y-0" : replyingTo ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
                     )}
                   >
@@ -209,10 +209,10 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
                 size="icon"
                 disabled={!message.trim() || disabled}
                 className={cn(
-                  "absolute inset-0 z-10 rounded-lg ease-out active:scale-95",
+                  "absolute inset-0 z-10 rounded-lg transition-all duration-(--duration-fast) ease-out btn-press",
                   message.trim()
                     ? "opacity-100 scale-100 blur-0 text-primary hover:text-primary-foreground hover:bg-primary animate-send-pop"
-                    : "opacity-0 scale-50 blur-sm pointer-events-none"
+                    : "opacity-0 scale-50 blur-xs pointer-events-none"
                 )}
               >
                 <Send className="size-5" />
@@ -220,10 +220,10 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
 
               <div
                 className={cn(
-                  "absolute inset-0 z-0 ease-out",
+                  "absolute inset-0 z-0 transition-all duration-(--duration-fast) ease-out",
                   !message.trim()
                     ? "opacity-100 scale-100 blur-0"
-                    : "opacity-0 scale-50 blur-sm pointer-events-none"
+                    : "opacity-0 scale-50 blur-xs pointer-events-none"
                 )}
               >
                 <LazyAudioRecorderTrigger
