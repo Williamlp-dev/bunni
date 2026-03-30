@@ -12,7 +12,8 @@
 	"r2_buckets": [
 		{
 			"binding": "BUCKET",
-			"bucket_name": "bunni-media"
+			"bucket_name": "bunni-media",
+			"preview_bucket_name": "bunni-media"
 		}
 	]
 }
