@@ -211,6 +211,46 @@ export async function deleteMessagesForMe(
   return { deletedCount: result.rowCount ?? 0 }
 }
 
+export async function clearConversationForMe(
+  userId: string,
+  conversationId: string
+): Promise<{ clearedCount: number }> {
+  await validateParticipation(userId, conversationId)
+
+  const allMessageIds = await db
+    .select({ id: messages.id })
+    .from(messages)
+    .leftJoin(
+      messageDeletions,
+      and(
+        eq(messageDeletions.messageId, messages.id),
+        eq(messageDeletions.userId, userId)
+      )
+    )
+    .where(
+      and(
+        eq(messages.conversationId, conversationId),
+        isNull(messageDeletions.id)
+      )
+    )
+
+  if (allMessageIds.length === 0) {
+    return { clearedCount: 0 }
+  }
+
+  const values = allMessageIds.map(({ id }) => ({
+    messageId: id,
+    userId,
+  }))
+
+  const result = await db
+    .insert(messageDeletions)
+    .values(values)
+    .onConflictDoNothing({ target: [messageDeletions.messageId, messageDeletions.userId] })
+
+  return { clearedCount: result.rowCount ?? 0 }
+}
+
 export async function undoDeleteForMe(
   userId: string,
   messageIds: string[]

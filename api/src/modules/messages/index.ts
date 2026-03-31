@@ -178,3 +178,18 @@ export const messagesRoutes = new Elysia({ prefix: "/messages" })
       },
     }
   )
+  .post(
+    "/clear-conversation/:conversationId",
+    async ({ user, params }) => {
+      return await MessageService.clearConversationForMe(user.id, params.conversationId)
+    },
+    {
+      auth: true,
+      params: ConversationIdParamSchema,
+      detail: {
+        tags: ["Messages"],
+        summary: "Limpar conversa",
+        description: "Remove todas as mensagens de uma conversa apenas para o usuário autenticado. A conversa permanece na lista e o outro participante não é afetado. Ideal para liberar o histórico sem apagar para todos.",
+      },
+    }
+  )
