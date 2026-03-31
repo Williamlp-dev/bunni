@@ -48,6 +48,12 @@ export const BlockedUsersResponseSchema = t.Object({
   blocked: t.Array(BlockedUserSchema),
 })
 
+export const BlockStatusResponseSchema = t.Object({
+  isBlocked: t.Boolean(),
+  isBlockedByMe: t.Boolean(),
+  isBlockedByThem: t.Boolean(),
+})
+
 
 export type UserBasicInfo = {
   id: string

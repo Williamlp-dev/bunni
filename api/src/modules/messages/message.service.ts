@@ -4,9 +4,10 @@ import { messages } from "@/database/schema/messages"
 import { messageDeletions } from "@/database/schema/message-deletions"
 import { users } from "@/database/schema/users"
 import { encrypt, decrypt } from "@/lib/crypto"
-import { isParticipant } from "@/modules/conversations/conversation.service"
+import { isParticipant, getOtherParticipantIds } from "@/modules/conversations/conversation.service"
 import type { UserBasicInfo } from "@/modules/users/user.model"
 import { MessageServiceError } from "@/shared/errors/message.errors"
+import { isBlocked } from "@/shared/helpers/relationship.helpers"
 import { deleteFromR2 } from "@/modules/uploads/upload.service"
 import { env } from "@/env"
 
@@ -351,6 +352,13 @@ export async function sendMessage(
   options?: SendMessageOptions
 ): Promise<MessageWithSender> {
   await validateParticipation(senderId, conversationId)
+
+  const otherParticipants = await getOtherParticipantIds(senderId, conversationId)
+  for (const participantId of otherParticipants) {
+    if (await isBlocked(senderId, participantId)) {
+      throw new MessageServiceError("Cannot send message to blocked user", "BLOCKED_USER")
+    }
+  }
 
   const messageType = options?.type ?? "text"
 

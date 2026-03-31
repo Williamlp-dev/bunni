@@ -1,4 +1,5 @@
 import type { ServerWebSocket } from "bun"
+import { isBlocked } from "@/shared/helpers/relationship.helpers"
 
 type WSData = {
   userId: string | null
@@ -71,25 +72,34 @@ export function unsubscribeFromConversation(
   ws.data.conversationIds.delete(conversationId)
 }
 
-export function broadcastToConversation<T>(
+export async function broadcastToConversation<T>(
   conversationId: string,
   event: string,
   data: T,
   excludeWs?: ElysiaWebSocket,
-  excludeUserId?: string
-): void {
+  excludeUserId?: string,
+  senderId?: string
+): Promise<void> {
   const subscribers = conversationSubscribers.get(conversationId)
   if (!subscribers) return
 
+  const candidateWs = [...subscribers].filter(
+    (ws) => ws !== excludeWs && ws.data.userId !== excludeUserId
+  )
+
+  const blockedFlags = senderId
+    ? await Promise.all(
+        candidateWs.map((ws) =>
+          ws.data.userId ? isBlocked(senderId, ws.data.userId) : Promise.resolve(false)
+        )
+      )
+    : candidateWs.map(() => false)
+
   const message = JSON.stringify({ event, data })
-  for (const ws of subscribers) {
-    if (ws !== excludeWs) {
-      if (excludeUserId && ws.data.userId === excludeUserId) {
-        continue
-      }
-      if (ws.readyState === 1) {
-        ws.send(message)
-      }
+  for (let i = 0; i < candidateWs.length; i++) {
+    if (blockedFlags[i]) continue
+    if (candidateWs[i].readyState === 1) {
+      candidateWs[i].send(message)
     }
   }
 }

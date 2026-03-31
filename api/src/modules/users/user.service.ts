@@ -7,6 +7,8 @@ import { eq, and, or, ilike, ne, sql } from "drizzle-orm"
 import { UserServiceError } from "@/shared/errors/user.errors"
 import { sendToUser } from "@/modules/websocket/connection-manager"
 import { deleteFromR2 } from "@/modules/uploads/upload.service"
+import { findExistingConversation } from "@/modules/conversations/conversation.service"
+import { invalidateBlockCache } from "@/shared/cache/block-cache"
 import { env } from "@/env"
 
 const USER_FIELDS = {
@@ -100,6 +102,9 @@ export async function blockUser(blockerId: string, blockedId: string): Promise<v
 
     await tx.insert(blocks).values({ blockerId, blockedId })
   })
+
+  invalidateBlockCache(blockerId, blockedId)
+  await emitConversationBlockedEvent(blockerId, blockedId)
 }
 
 export async function unblockUser(blockerId: string, blockedId: string): Promise<void> {
@@ -107,6 +112,31 @@ export async function unblockUser(blockerId: string, blockedId: string): Promise
     .where(and(eq(blocks.blockerId, blockerId), eq(blocks.blockedId, blockedId))).returning()
 
   if (deleted.length === 0) throw new UserServiceError("Usuário não está bloqueado", "NOT_BLOCKED")
+
+  invalidateBlockCache(blockerId, blockedId)
+  await emitConversationUnblockedEvent(blockerId, blockedId)
+}
+
+export async function isBlockedByMe(blockerId: string, blockedId: string): Promise<boolean> {
+  const [block] = await db.select().from(blocks)
+    .where(and(eq(blocks.blockerId, blockerId), eq(blocks.blockedId, blockedId))).limit(1)
+  return !!block
+}
+
+async function emitConversationBlockedEvent(blockerId: string, blockedId: string): Promise<void> {
+  const conversation = await findExistingConversation(blockerId, blockedId)
+  if (!conversation) return
+
+  sendToUser(blockerId, "conversation:blocked", { conversationId: conversation.id, blockerId })
+  sendToUser(blockedId, "conversation:blocked", { conversationId: conversation.id, blockerId })
+}
+
+async function emitConversationUnblockedEvent(blockerId: string, blockedId: string): Promise<void> {
+  const conversation = await findExistingConversation(blockerId, blockedId)
+  if (!conversation) return
+
+  sendToUser(blockerId, "conversation:unblocked", { conversationId: conversation.id, blockerId })
+  sendToUser(blockedId, "conversation:unblocked", { conversationId: conversation.id, blockerId })
 }
 
 export async function getBlockedUsers(userId: string) {

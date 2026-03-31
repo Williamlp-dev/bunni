@@ -6,7 +6,7 @@ import {
 } from "@/database/schema/conversations"
 import { users } from "@/database/schema/users"
 import { getUserByUsername } from "@/modules/users/user.service"
-import { areFriends } from "@/shared/helpers/relationship.helpers"
+import { areFriends, isBlocked } from "@/shared/helpers/relationship.helpers"
 import { ConversationServiceError } from "@/shared/errors/conversation.errors"
 import type { UserBasicInfo } from "@/modules/users/user.model"
 
@@ -24,10 +24,12 @@ export async function createConversation(
   participantId: string
 ): Promise<ConversationWithParticipants> {
   validateNotSelf(creatorId, participantId)
-  await validateFriendship(creatorId, participantId)
-
+  
   const existing = await findExistingConversation(creatorId, participantId)
   if (existing) return existing
+
+  await validateNotBlocked(creatorId, participantId)
+  await validateFriendship(creatorId, participantId)
 
   return createNewConversation(creatorId, participantId)
 }
@@ -49,6 +51,19 @@ function validateNotSelf(creatorId: string, participantId: string): void {
     throw new ConversationServiceError(
       "Cannot create conversation with yourself",
       "SELF_CONVERSATION"
+    )
+  }
+}
+
+async function validateNotBlocked(
+  userOneId: string,
+  userTwoId: string
+): Promise<void> {
+  const blocked = await isBlocked(userOneId, userTwoId)
+  if (blocked) {
+    throw new ConversationServiceError(
+      "Cannot create conversation with blocked user",
+      "BLOCKED_USER"
     )
   }
 }
@@ -108,9 +123,10 @@ async function createNewConversation(
   })
 }
 
-async function findExistingConversation(
+export async function findExistingConversation(
   userOneId: string,
   userTwoId: string
+
 ): Promise<ConversationWithParticipants | null> {
   const result = await db
     .select({ conversationId: conversationParticipants.conversationId })
@@ -234,4 +250,21 @@ export async function isParticipant(
     .limit(1)
 
   return !!participant
+}
+
+export async function getOtherParticipantIds(
+  userId: string,
+  conversationId: string
+): Promise<string[]> {
+  const participants = await db
+    .select({ userId: conversationParticipants.userId })
+    .from(conversationParticipants)
+    .where(
+      and(
+        eq(conversationParticipants.conversationId, conversationId),
+        sql`${conversationParticipants.userId} != ${userId}`
+      )
+    )
+
+  return participants.map((p) => p.userId)
 }

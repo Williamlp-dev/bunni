@@ -57,7 +57,7 @@ export async function handleMessage(
         break
       case "typing:start":
       case "typing:stop":
-        handleTyping(ws, validMessage)
+        await handleTyping(ws, validMessage)
         break
       case "message:send":
         ws.send(JSON.stringify({ event: "error", data: { code: "NOT_SUPPORTED", message: "Use HTTP to send messages" } }))
@@ -92,10 +92,10 @@ async function handleSubscribe(
   ws.send(JSON.stringify({ event: "subscribed", data: { conversationId } }))
 }
 
-function handleTyping(
+async function handleTyping(
   ws: ElysiaWebSocket,
   payload: Static<typeof typingSchema>
-): void {
+): Promise<void> {
   const { conversationId, type } = payload
   const userId = ws.data.userId
 
@@ -103,5 +103,12 @@ function handleTyping(
 
   if (!ws.data.conversationIds.has(conversationId)) return
 
-  broadcastToConversation(conversationId, type, { userId, conversationId }, ws)
+  await broadcastToConversation(
+    conversationId, 
+    type, 
+    { userId, conversationId }, 
+    ws, 
+    undefined, 
+    userId
+  )
 }

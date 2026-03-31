@@ -3,8 +3,12 @@ import { blocks } from "@/database/schema/blocks"
 import { friendships } from "@/database/schema/friendships"
 import { friendRequests } from "@/database/schema/friend-requests"
 import { eq, and, or } from "drizzle-orm"
+import { getCachedBlockStatus, setCachedBlockStatus } from "@/shared/cache/block-cache"
 
 export async function isBlocked(userId1: string, userId2: string): Promise<boolean> {
+  const cached = getCachedBlockStatus(userId1, userId2)
+  if (cached !== null) return cached
+
   const block = await db
     .select()
     .from(blocks)
@@ -16,7 +20,9 @@ export async function isBlocked(userId1: string, userId2: string): Promise<boole
     )
     .limit(1)
 
-  return block.length > 0
+  const result = block.length > 0
+  setCachedBlockStatus(userId1, userId2, result)
+  return result
 }
 
 export async function areFriends(userId1: string, userId2: string): Promise<boolean> {

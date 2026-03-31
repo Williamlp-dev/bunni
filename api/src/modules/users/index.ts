@@ -5,12 +5,13 @@ import { UserServiceError } from "@/shared/errors/user.errors"
 import { authMacro } from "@/plugins/better-auth"
 import {
   UserSearchQuerySchema,
-  UsernameParamSchema,
   UpdateBioBodySchema,
+  BlockStatusResponseSchema,
 } from "./user.model"
 import {
   UUIDParamSchema,
 } from "@/shared/models/common.model"
+import { t as T } from "elysia"
 
 
 export const usersRoutes = new Elysia({ prefix: "/users" })
@@ -49,20 +50,6 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       },
     })
 
-  .get("/:username", async ({ params, set }) => {
-    const foundUser = await userService.getUserByUsername(params.username)
-    if (!foundUser) { set.status = 404; return { error: "Usuário não encontrado", code: "NOT_FOUND" } }
-    return { user: foundUser }
-  }, {
-    auth: true,
-    params: UsernameParamSchema,
-    detail: {
-      tags: ["Users"],
-      summary: "Buscar perfil por username",
-      description: "Retorna as informações públicas de um usuário a partir do seu username único. Útil para visualizar perfis e verificar disponibilidade de usernames.",
-    },
-  })
-
   .post("/:id/block", async ({ params, user }) => { await userService.blockUser(user.id, params.id); return { success: true } },
     {
       auth: true,
@@ -70,7 +57,7 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       detail: {
         tags: ["Users"],
         summary: "Bloquear usuário",
-        description: "Bloqueia um usuário pelo seu ID. Após o bloqueio, o usuário bloqueado não consegue enviar mensagens, pedidos de amizade ou visualizar o perfil do usuário autenticado.",
+        description: "Bloqueia um usuário pelo seu ID.",
       },
     })
 
@@ -81,9 +68,39 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       detail: {
         tags: ["Users"],
         summary: "Desbloquear usuário",
-        description: "Remove o bloqueio de um usuário previamente bloqueado. Após o desbloqueio, o usuário volta a ter acesso normal às funcionalidades.",
+        description: "Remove o bloqueio de um usuário previamente bloqueado.",
       },
     })
+
+  .get("/:id/block-status", async ({ params, user }) => {
+    if (params.id === user.id) return { isBlocked: false, isBlockedByMe: false, isBlockedByThem: false }
+    const isBlockedByMe = await userService.isBlockedByMe(user.id, params.id)
+    const isBlockedByThem = await userService.isBlockedByMe(params.id, user.id)
+    return { isBlockedByMe, isBlockedByThem, isBlocked: isBlockedByMe || isBlockedByThem }
+  }, {
+    auth: true,
+    params: UUIDParamSchema,
+    response: BlockStatusResponseSchema,
+    detail: {
+      tags: ["Users"],
+      summary: "Verificar status de bloqueio",
+      description: "Verifica se o usuário autenticado bloqueou um usuário específico.",
+    },
+  })
+
+  .get("/:id", async ({ params, set }) => {
+    const foundUser = await userService.getUserByUsername(params.id)
+    if (!foundUser) { set.status = 404; return { error: "Usuário não encontrado", code: "NOT_FOUND" } }
+    return { user: foundUser }
+  }, {
+    auth: true,
+    params: T.Object({ id: T.String({ minLength: 1 }) }),
+    detail: {
+      tags: ["Users"],
+      summary: "Buscar perfil por username",
+      description: "Retorna as informações públicas de um usuário a partir do seu username único.",
+    },
+  })
 
   .post("/avatar/presigned-url", async ({ body, user }) => {
     return await uploadService.generateAvatarPresignedUrl(user.id, body.contentType)

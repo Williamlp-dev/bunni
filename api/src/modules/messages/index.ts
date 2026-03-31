@@ -24,6 +24,7 @@ export const messagesRoutes = new Elysia({ prefix: "/messages" })
         INTERNAL_ERROR: 500,
         INVALID_REPLY: 400,
         BATCH_LIMIT_EXCEEDED: 400,
+        BLOCKED_USER: 403,
       }
       set.status = statusMap[error.code] ?? 400
       return { error: error.message, code: error.code }
@@ -47,7 +48,7 @@ export const messagesRoutes = new Elysia({ prefix: "/messages" })
         }
       )
 
-      broadcastToConversation(
+      await broadcastToConversation(
         params.conversationId,
         "message:new",
         {
@@ -64,7 +65,8 @@ export const messagesRoutes = new Elysia({ prefix: "/messages" })
           replyTo: message.replyTo,
         },
         undefined,
-        user.id
+        undefined, // excludeUserId
+        user.id // senderId
       )
 
       set.status = 201
@@ -107,10 +109,17 @@ export const messagesRoutes = new Elysia({ prefix: "/messages" })
     async ({ user, params }) => {
       const message = await MessageService.deleteMessage(user.id, params.messageId)
 
-      broadcastToConversation(message.conversationId, "message:deleted", {
-        id: message.id,
-        conversationId: message.conversationId,
-      })
+      await broadcastToConversation(
+        message.conversationId, 
+        "message:deleted", 
+        {
+          id: message.id,
+          conversationId: message.conversationId,
+        },
+        undefined,
+        undefined,
+        user.id
+      )
 
       return message
     },
@@ -160,10 +169,17 @@ export const messagesRoutes = new Elysia({ prefix: "/messages" })
       const result = await MessageService.deleteMessagesForEveryone(user.id, body.messageIds)
 
       for (const messageId of body.messageIds) {
-        broadcastToConversation(result.conversationId, "message:deleted", {
-          id: messageId,
-          conversationId: result.conversationId,
-        })
+        await broadcastToConversation(
+          result.conversationId, 
+          "message:deleted", 
+          {
+            id: messageId,
+            conversationId: result.conversationId,
+          },
+          undefined,
+          undefined,
+          user.id
+        )
       }
 
       return { deletedCount: result.deletedCount }
