@@ -25,9 +25,9 @@ export function SelectionHeader({
     <div className="absolute inset-x-0 top-20 z-30 flex justify-center pointer-events-none px-4 sm:px-6">
       <header
         className={cn(
-          "pointer-events-auto flex items-center justify-between h-16 w-full max-w-2xl px-2 rounded-2xl",
+          "pointer-events-auto flex items-center justify-between h-16 w-full max-w-2xl px-2 rounded-4xl",
           "bg-foreground text-background shadow-2xl ring-1 ring-border/10",
-          "animate-selection-bar-in will-change-[transform,opacity]",
+          "animate-in slide-in-from-top-8 fade-in duration-(--duration-base) ease-snappy will-change-[transform,opacity]",
           className
         )}
       >
@@ -37,7 +37,7 @@ export function SelectionHeader({
             aria-label="Deselecionar"
             variant="ghost"
             size="icon"
-            className="text-background hover:bg-background/20 rounded-xl btn-press transition-all duration-(--duration-fast) size-10 mr-3"
+            className="text-background hover:bg-background/20 hover:rounded-2xl rounded-xl btn-press transition-all duration-(--duration-fast) ease-snappy size-10 mr-3 shrink-0"
           >
             <X className="size-4" />
           </Button>
@@ -57,7 +57,7 @@ export function SelectionHeader({
             aria-label="Copiar mensagens"
             variant="ghost"
             size="icon"
-            className="text-background hover:bg-background/20 rounded-xl btn-press transition-all duration-(--duration-fast) size-10"
+            className="text-background hover:bg-background/20 hover:rounded-2xl rounded-xl btn-press transition-all duration-(--duration-fast) ease-snappy size-10"
           >
             <Copy className="size-[18px]" />
           </Button>
@@ -66,7 +66,7 @@ export function SelectionHeader({
             aria-label="Encaminhar mensagens"
             variant="ghost"
             size="icon"
-            className="text-background hover:bg-background/20 rounded-xl btn-press transition-all duration-(--duration-fast) size-10"
+            className="text-background hover:bg-background/20 hover:rounded-2xl rounded-xl btn-press transition-all duration-(--duration-fast) ease-snappy size-10"
             disabled={!onForward}
           >
             <Forward className="size-[18px]" />
@@ -77,7 +77,7 @@ export function SelectionHeader({
               aria-label="Responder mensagem"
               variant="ghost"
               size="icon"
-              className="text-background hover:bg-background/20 rounded-xl btn-press transition-all duration-(--duration-fast) size-10"
+              className="text-background hover:bg-background/20 hover:rounded-2xl rounded-xl btn-press transition-all duration-(--duration-fast) ease-snappy size-10"
             >
               <Reply className="size-[18px]" />
             </Button>
@@ -89,7 +89,7 @@ export function SelectionHeader({
                 aria-label="Apagar mensagens"
                 variant="ghost"
                 size="icon"
-                className="text-destructive hover:bg-destructive/20 hover:text-destructive rounded-xl btn-press transition-all duration-(--duration-fast) size-10"
+                className="text-destructive hover:bg-destructive/20 hover:text-destructive hover:rounded-2xl rounded-xl btn-press transition-all duration-(--duration-fast) ease-snappy size-10"
               >
                 <Trash2 className="size-[18px]" />
               </Button>

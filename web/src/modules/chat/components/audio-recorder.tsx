@@ -194,8 +194,8 @@ function WaveBars({ status }: { status: RecordingStatus }): React.JSX.Element {
           <div
             key={i}
             className={cn(
-              'w-1 rounded-full',
-              isRecording ? 'animate-audio-wave bg-primary shadow-brand' : 'h-1 bg-primary/20'
+              'w-1 rounded-full transition-all duration-(--duration-fast) ease-snappy',
+              isRecording ? 'animate-audio-wave bg-primary shadow-primary/40 shadow-xs' : 'h-1 bg-muted-foreground/30'
             )}
             style={{
               height: isRecording ? `${seedHeight}px` : '3px',
@@ -221,9 +221,9 @@ export function AudioRecorderOverlay({ hideSendButton = false }: AudioRecorderOv
     <div
       data-state={isOpen ? 'open' : 'closed'}
       className={cn(
-        "absolute inset-0 z-10 flex items-center gap-2 rounded-md bg-background px-2 border border-input transition-all duration-(--duration-base) ease-out",
-        "data-[state=closed]:opacity-0 data-[state=closed]:pointer-events-none data-[state=closed]:clip-path-[inset(0_0_0_100%)]",
-        "data-[state=open]:opacity-100 data-[state=open]:clip-path-[inset(0_0_0_0)]"
+        "absolute inset-0 z-10 flex items-center gap-2 rounded-md bg-background px-2 shadow-sm border border-transparent dark:border-input transition-all duration-(--duration-base) ease-snappy origin-[100%_50%]",
+        "data-[state=closed]:opacity-0 data-[state=closed]:scale-75 data-[state=closed]:translate-x-6 data-[state=closed]:pointer-events-none data-[state=closed]:blur-sm",
+        "data-[state=open]:opacity-100 data-[state=open]:scale-100 data-[state=open]:translate-x-0 data-[state=open]:blur-0"
       )}
     >
       <Button
@@ -242,8 +242,8 @@ export function AudioRecorderOverlay({ hideSendButton = false }: AudioRecorderOv
       <div className="flex items-center gap-2 shrink-0">
         <span
           className={cn(
-            'min-w-12 text-center font-mono text-xs font-medium tabular-nums px-2 py-1 rounded-md bg-muted',
-            status === 'recording' ? 'text-primary' : 'text-muted-foreground'
+            'min-w-12 text-center font-mono text-xs font-bold tabular-nums px-2 py-1 rounded-lg transition-colors duration-(--duration-fast) ease-snappy',
+            status === 'recording' ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
           )}
         >
           {formatTime(duration)}
@@ -253,14 +253,17 @@ export function AudioRecorderOverlay({ hideSendButton = false }: AudioRecorderOv
           type="button"
           variant="secondary"
           size="icon"
-          className="rounded-full size-9 shadow-sm btn-press transition-all duration-(--duration-fast)"
+          className={cn(
+            "size-9 shadow-sm btn-press transition-all duration-(--duration-fast) ease-snappy",
+            status === 'recording' ? 'rounded-full bg-secondary text-secondary-foreground' : 'rounded-xl bg-primary/15 text-primary hover:bg-primary/25'
+          )}
           onClick={togglePause}
           aria-label={status === 'recording' ? 'Pause recording' : 'Resume recording'}
         >
           <div className="relative flex items-center justify-center size-full">
             <Pause
               className={cn(
-                'absolute size-4 fill-current transition-all duration-(--duration-fast)',
+                'absolute size-4 fill-current transition-all duration-(--duration-fast) ease-snappy',
                 status === 'recording'
                   ? 'opacity-100 scale-100 blur-0'
                   : 'opacity-0 scale-50 blur-xs'
@@ -268,7 +271,7 @@ export function AudioRecorderOverlay({ hideSendButton = false }: AudioRecorderOv
             />
             <Play
               className={cn(
-                'absolute size-4 fill-current ml-1 transition-all duration-(--duration-fast)',
+                'absolute size-4 fill-current ml-1 transition-all duration-(--duration-fast) ease-snappy',
                 status === 'recording'
                   ? 'opacity-0 scale-50 blur-xs'
                   : 'opacity-100 scale-100 blur-0'
@@ -281,7 +284,7 @@ export function AudioRecorderOverlay({ hideSendButton = false }: AudioRecorderOv
           <Button
             type="button"
             size="icon"
-            className="rounded-full size-9 shadow-sm animate-in zoom-in-50 duration-(--duration-base) btn-press"
+            className="rounded-full size-9 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm animate-in zoom-in-50 duration-(--duration-base) ease-snappy btn-press"
             onClick={send}
             aria-label="Send recording"
           >
@@ -322,25 +325,25 @@ export function AudioRecorderTrigger({ disabled, className, onSubmitBehavior = '
       variant="ghost"
       size="icon"
       className={cn(
-        'relative btn-press transition-all duration-(--duration-fast)',
-        isActive && 'bg-primary text-primary-foreground rotate-0 scale-100',
+        'relative btn-press transition-all duration-(--duration-fast) ease-snappy',
+        isActive ? 'rounded-xl bg-primary/15 text-primary scale-90' : 'rounded-full',
         className
       )}
       onClick={handleClick}
       aria-label={isActive ? (onSubmitBehavior === 'send' ? 'Send recording' : 'Stop recording') : 'Start recording'}
     >
-      <div className="relative flex items-center justify-center size-full">
+      <div className="relative flex items-center justify-center size-full overflow-hidden rounded-full transition-all duration-(--duration-fast) ease-snappy">
         <Mic
           className={cn(
-            'absolute size-5 transition-all duration-(--duration-fast)',
-            isActive ? 'opacity-0 scale-50 blur-xs' : 'opacity-100 scale-100 blur-0'
+            'absolute size-5 transition-all duration-(--duration-fast) ease-snappy',
+            isActive ? 'opacity-0 scale-0' : 'opacity-100 scale-100'
           )}
         />
 
         <Send
           className={cn(
-            'absolute size-5 transition-all duration-(--duration-fast)',
-            isActive ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-50 blur-xs'
+            'absolute size-5 transition-all duration-(--duration-fast) ease-snappy',
+            isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-0'
           )}
         />
       </div>
