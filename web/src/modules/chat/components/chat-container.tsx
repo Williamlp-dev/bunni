@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, type RefObject } from "react"
+import { useRef, useEffect, useCallback, forwardRef, type RefObject } from "react"
 import { cn } from "@/lib/utils"
 
 export type ChatContainerRootProps = {
@@ -93,25 +93,36 @@ function useStickToBottom(containerRef: RefObject<HTMLDivElement | null>) {
 }
 
 
-function ChatContainerRoot({
-  children,
-  className,
-  ...props
-}: ChatContainerRootProps): React.ReactElement {
-  const containerRef = useRef<HTMLDivElement>(null)
-  useStickToBottom(containerRef)
+const ChatContainerRoot = forwardRef<HTMLDivElement, ChatContainerRootProps>(
+  ({ children, className, ...props }, ref) => {
+    const internalRef = useRef<HTMLDivElement>(null)
 
-  return (
-    <div
-      ref={containerRef}
-      className={cn("flex flex-col overflow-y-auto overflow-x-hidden", className)}
-      role="log"
-      {...props}
-    >
-      {children}
-    </div>
-  )
-}
+    
+    // Merge refs
+    const setRef = useCallback((node: HTMLDivElement | null) => {
+      internalRef.current = node
+      if (typeof ref === 'function') {
+        ref(node)
+      } else if (ref) {
+        ref.current = node
+      }
+    }, [ref])
+
+    useStickToBottom(internalRef)
+
+    return (
+      <div
+        ref={setRef}
+        className={cn("flex flex-col overflow-y-auto overflow-x-hidden", className)}
+        role="log"
+        {...props}
+      >
+        {children}
+      </div>
+    )
+  }
+)
+ChatContainerRoot.displayName = "ChatContainerRoot"
 
 function ChatContainerContent({
   children,

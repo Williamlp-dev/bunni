@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react"
+import { useRef, useCallback, useMemo, useLayoutEffect } from "react"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DateDivider } from "./date-divider"
@@ -10,7 +10,8 @@ import { ChatContainerRoot, ChatContainerContent, ChatContainerScrollAnchor } fr
 
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty-state'
 import { MessageSquare, Trash2, Ban, ChevronDown, Reply, Loader2, CheckSquare } from "lucide-react"
-import { formatTimestamp } from "@/modules/chat/utils/chat-utils"
+import { formatTimestamp, groupMessagesByDate } from "@/modules/chat/utils/chat-utils"
+import { useIntersectionObserver } from "@/hooks/use-intersection-observer"
 import type { Message } from "@/lib/eden-types"
 
 type MessageListProps = {
@@ -45,6 +46,7 @@ type MessageItemProps = {
   onContentPointerLeave: () => void
   isLongPressTriggered: () => boolean
   resetLongPressTrigger: () => void
+  isNew?: boolean
 }
 
 function MessageItem({
@@ -61,7 +63,8 @@ function MessageItem({
   onContentPointerUp,
   onContentPointerLeave,
   isLongPressTriggered,
-  resetLongPressTrigger
+  resetLongPressTrigger,
+  isNew
 }: MessageItemProps): React.ReactElement {
   const isOwner = message.senderId === currentUserId
   const isDeleted = !!message.deletedAt
@@ -92,7 +95,8 @@ function MessageItem({
     <div
       id={`message-${message.id}`}
       className={cn(
-        "relative flex items-center group transition-colors duration-500 rounded-lg py-1 animate-message-slide-up",
+        "relative flex items-center group transition-colors duration-500 rounded-lg py-1",
+        isNew && "animate-message-slide-up",
         isOwner && "flex-row-reverse",
       )}
       onPointerDown={onContentPointerDown}
@@ -235,52 +239,92 @@ export function MessageList({
     }
   }, [])
 
+  const initialMaxTimeRef = useRef<number | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const savedScrollRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(null)
+
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage && onLoadMore) {
+      if (containerRef.current) {
+        savedScrollRef.current = {
+           scrollHeight: containerRef.current.scrollHeight,
+           scrollTop: containerRef.current.scrollTop
+        }
+      }
+      onLoadMore()
+    }
+  }, [hasNextPage, isFetchingNextPage, onLoadMore])
+
+  const { targetRef: loadMoreRef } = useIntersectionObserver({
+    onIntersect: handleLoadMore,
+    enabled: !!hasNextPage && !isFetchingNextPage
+  })
+
+  useLayoutEffect(() => {
+    if (savedScrollRef.current && containerRef.current) {
+       const heightDiff = containerRef.current.scrollHeight - savedScrollRef.current.scrollHeight
+       if (heightDiff > 0) {
+          containerRef.current.scrollTop = savedScrollRef.current.scrollTop + heightDiff
+       }
+       savedScrollRef.current = null
+    }
+  }, [messages.length])
+
+  if (initialMaxTimeRef.current === null && messages.length > 0) {
+    initialMaxTimeRef.current = Math.max(...messages.map(m => new Date(m.createdAt).getTime()))
+  }
+
+  const groupedMessages = useMemo(() => groupMessagesByDate(messages), [messages])
+
   if (messages.length > 0) {
     return (
       <ChatContainerRoot
+        ref={containerRef}
         className="flex-1 min-h-0 selection:bg-foreground selection:text-background overflow-x-hidden"
       >
         <ChatContainerContent className="flex-col min-h-full gap-0 px-4 py-4">
           {hasNextPage && (
-            <div className="flex justify-center pb-4">
-              <button
-                type="button"
-                onClick={onLoadMore}
-                disabled={isFetchingNextPage}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
-              >
-                {isFetchingNextPage ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Carregando...
-                  </>
-                ) : (
-                  "Carregar mensagens anteriores"
-                )}
-              </button>
+            <div ref={loadMoreRef} className="flex justify-center pb-4 h-10">
+              {isFetchingNextPage && (
+                <div className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" />
+                  Carregando...
+                </div>
+              )}
             </div>
           )}
           <div className="flex-1" />
-          <DateDivider date="Hoje" />
-          <div className="h-6" />
-          {messages.map((message) => (
-            <MessageItem
-              key={message.id}
-              message={message}
-              currentUserId={currentUserId}
-              activeParticipantName={activeParticipantName}
-              isSelected={selectedMessageIds?.has(message.id) ?? false}
-              isSelectionMode={isSelectionMode ?? false}
-              onReply={onReply}
-              onDeleteRequest={onDeleteRequest}
-              onEnterSelectionMode={onEnterSelectionMode}
-              onToggleSelect={onToggleSelect}
-              onContentPointerDown={(e) => handlePointerDown(e, message)}
-              onContentPointerUp={handlePointerUp}
-              onContentPointerLeave={handlePointerUp}
-              isLongPressTriggered={() => longPressTriggeredRef.current}
-              resetLongPressTrigger={() => { longPressTriggeredRef.current = false }}
-            />
+          
+          {Object.entries(groupedMessages).map(([dateLabel, dateMsgs]) => (
+            <div key={dateLabel} className="flex flex-col gap-0">
+              <DateDivider date={dateLabel} />
+              <div className="h-6" />
+              {dateMsgs.map((message) => {
+                const msgTime = new Date(message.createdAt).getTime()
+                const isNewMessage = initialMaxTimeRef.current !== null && msgTime > initialMaxTimeRef.current
+
+                return (
+                  <MessageItem
+                    key={message.id}
+                    message={message}
+                    currentUserId={currentUserId}
+                    activeParticipantName={activeParticipantName}
+                    isSelected={selectedMessageIds?.has(message.id) ?? false}
+                    isSelectionMode={isSelectionMode ?? false}
+                    isNew={isNewMessage}
+                    onReply={onReply}
+                    onDeleteRequest={onDeleteRequest}
+                    onEnterSelectionMode={onEnterSelectionMode}
+                    onToggleSelect={onToggleSelect}
+                    onContentPointerDown={(e) => handlePointerDown(e, message)}
+                    onContentPointerUp={handlePointerUp}
+                    onContentPointerLeave={handlePointerUp}
+                    isLongPressTriggered={() => longPressTriggeredRef.current}
+                    resetLongPressTrigger={() => { longPressTriggeredRef.current = false }}
+                  />
+                )
+              })}
+            </div>
           ))}
 
           <TypingIndicator 
