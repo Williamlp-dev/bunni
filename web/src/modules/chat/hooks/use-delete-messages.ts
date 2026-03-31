@@ -193,3 +193,54 @@ export function canDeleteForEveryone(
     (m) => m.senderId === currentUserId && !m.deletedAt
   )
 }
+
+export function useClearConversation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (conversationId: string) => {
+      const { data, error } = await api.messages["clear-conversation"]({ conversationId }).post()
+      if (error) throw error
+      return { ...data, conversationId }
+    },
+    onMutate: async (conversationId) => {
+      await queryClient.cancelQueries({ queryKey: messagesKeys.list(conversationId) })
+
+      const previousData = queryClient.getQueryData<InfiniteMessagesData>(
+        messagesKeys.list(conversationId)
+      )
+
+      queryClient.setQueryData<InfiniteMessagesData>(
+        messagesKeys.list(conversationId),
+        (old) => {
+          if (!old?.pages) return old
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({ ...page, messages: [] })),
+          }
+        }
+      )
+
+      return { previousData }
+    },
+    onError: (_error, conversationId, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(messagesKeys.list(conversationId), context.previousData)
+      }
+      toast.error("Erro ao limpar conversa")
+    },
+    onSuccess: (data) => {
+      if (data.clearedCount === 0) {
+        toast.info("A conversa já está vazia", {
+          position: "bottom-center",
+          className: "mb-24 bg-background/80 backdrop-blur-xl border border-border/50 shadow-2xl rounded-full px-6 py-3 gap-3",
+        })
+        return
+      }
+      toast.success("Conversa limpa", {
+        position: "bottom-center",
+        className: "mb-24 bg-background/80 backdrop-blur-xl border border-border/50 shadow-2xl rounded-full px-6 py-3 gap-3",
+      })
+    },
+  })
+}

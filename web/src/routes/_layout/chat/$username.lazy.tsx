@@ -83,7 +83,7 @@ function ChatSkeleton() {
   return (
     <main className="flex flex-1 flex-col h-full bg-background overflow-hidden">
       <div className="relative">
-        <ChatHeader title="..." onBack={() => navigate({ to: "/chat" })} />
+        <ChatHeader title="..." onBack={() => navigate({ to: "/chat" })} onClearChat={() => {}} />
       </div>
       <div className="flex-1 overflow-hidden flex flex-col relative w-full pt-10">
         <MessageListSkeleton />
@@ -128,7 +128,7 @@ function ChatWithUserPage() {
     <>
       <main className="flex flex-1 flex-col h-full bg-background overflow-hidden">
         <div className="relative">
-          <ChatHeader title={chat.displayName} onBack={chat.navigateToChat} />
+          <ChatHeader title={chat.displayName} onBack={chat.navigateToChat} onClearChat={chat.handleClearChat} />
           {selectedCount > 0 && (
             <SelectionHeader
               selectedCount={selectedCount}

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 import { useNavigate, useRouteContext } from "@tanstack/react-router"
 import { useSuspenseConversationByUsername } from "@/modules/chat/hooks/use-conversations"
 import { useSuspenseMessages, useSendMessage, flattenMessages, messagesKeys, type InfiniteMessagesData } from "@/modules/chat/hooks/use-messages"
-import { useDeleteForMe, useDeleteForEveryone, canDeleteForEveryone } from "@/modules/chat/hooks/use-delete-messages"
+import { useDeleteForMe, useDeleteForEveryone, canDeleteForEveryone, useClearConversation } from "@/modules/chat/hooks/use-delete-messages"
 import { useWebSocket } from "@/modules/chat/hooks/use-websocket"
 import { useMessageSelection } from "@/modules/chat/hooks/use-message-selection"
 import { useAudioUpload } from "@/modules/chat/hooks/use-audio-upload"
@@ -93,6 +93,7 @@ export function useChatPage(username: string) {
   const [replyingTo, setReplyingTo] = useState<Message | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [deleteTargetMessages, setDeleteTargetMessages] = useState<Message[]>([])
+  const [isClearChatDialogOpen, setIsClearChatDialogOpen] = useState(false)
 
   const deleteForMe = useDeleteForMe({
     onUndoReady: (undo) => {
@@ -115,6 +116,8 @@ export function useChatPage(username: string) {
       })
     }
   })
+
+  const clearConversation = useClearConversation()
 
   useEffect(() => {
     if (conversationId) {
@@ -145,6 +148,11 @@ export function useChatPage(username: string) {
       messageIds: deleteTargetMessages.map((m) => m.id),
     })
     resetDeleteState()
+  }
+
+  const handleClearChat = () => {
+    if (!conversationId) return
+    clearConversation.mutate(conversationId)
   }
 
   const handleDeleteForEveryone = () => {
@@ -301,6 +309,9 @@ export function useChatPage(username: string) {
     deleteTargetMessages,
     showDeleteForEveryone: canDeleteForEveryone(deleteTargetMessages, currentUserId),
 
+    isClearChatDialogOpen,
+    setIsClearChatDialogOpen,
+
     selectedMessages,
     isSelectionMode,
     selectMessage,
@@ -320,6 +331,7 @@ export function useChatPage(username: string) {
     handleDeleteFromSelection,
     handleDeleteForMe,
     handleDeleteForEveryone,
+    handleClearChat,
     handleCopySelected,
     handleReplySelected,
     handleLoadMore,
