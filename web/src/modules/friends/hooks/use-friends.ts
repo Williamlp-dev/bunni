@@ -50,10 +50,22 @@ export function useSendFriendRequest() {
       if (error) throw error
       return data
     },
+    onMutate: async (username: string) => {
+      await queryClient.cancelQueries({ queryKey: friendsKeys.sentRequests() })
+      const previousSent = queryClient.getQueryData(friendsKeys.sentRequests())
+      queryClient.setQueryData(friendsKeys.sentRequests(), (old: any[] = []) => [
+        ...old,
+        { id: `optimistic-${username}`, receiver: { displayUsername: username } },
+      ])
+      return { previousSent }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: friendsKeys.sentRequests() })
     },
-    onError: (error: any) => {
+    onError: (error: any, _username, context) => {
+      if (context?.previousSent !== undefined) {
+        queryClient.setQueryData(friendsKeys.sentRequests(), context.previousSent)
+      }
       if (error?.status === 409 || error?.value?.code === "ALREADY_REQUESTED" || error?.value?.code === "ALREADY_FRIENDS") {
         queryClient.invalidateQueries({ queryKey: friendsKeys.sentRequests() })
         queryClient.invalidateQueries({ queryKey: friendsKeys.list() })
@@ -72,7 +84,20 @@ export function useAcceptFriendRequest() {
       if (error) throw error
       return data
     },
-    onSuccess: () => {
+    onMutate: async (requestId: string) => {
+      await queryClient.cancelQueries({ queryKey: friendsKeys.pendingRequests() })
+      const previousRequests = queryClient.getQueryData(friendsKeys.pendingRequests())
+      queryClient.setQueryData(friendsKeys.pendingRequests(), (old: any[] = []) =>
+        old.filter((r) => r.id !== requestId)
+      )
+      return { previousRequests }
+    },
+    onError: (_error, _requestId, context) => {
+      if (context?.previousRequests !== undefined) {
+        queryClient.setQueryData(friendsKeys.pendingRequests(), context.previousRequests)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: friendsKeys.all })
       queryClient.invalidateQueries({ queryKey: ["conversations"] })
     },
@@ -88,7 +113,20 @@ export function useRejectFriendRequest() {
       if (error) throw error
       return data
     },
-    onSuccess: () => {
+    onMutate: async (requestId: string) => {
+      await queryClient.cancelQueries({ queryKey: friendsKeys.pendingRequests() })
+      const previousRequests = queryClient.getQueryData(friendsKeys.pendingRequests())
+      queryClient.setQueryData(friendsKeys.pendingRequests(), (old: any[] = []) =>
+        old.filter((r) => r.id !== requestId)
+      )
+      return { previousRequests }
+    },
+    onError: (_error, _requestId, context) => {
+      if (context?.previousRequests !== undefined) {
+        queryClient.setQueryData(friendsKeys.pendingRequests(), context.previousRequests)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: friendsKeys.pendingRequests() })
     },
   })
