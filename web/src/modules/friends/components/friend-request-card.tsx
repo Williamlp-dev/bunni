@@ -1,4 +1,4 @@
-import { Check, X } from "lucide-react"
+import { Check, X, Loader2 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import type { Request } from "@/lib/eden-types"
@@ -7,6 +7,8 @@ type FriendRequestCardProps = {
   request: Request
   onAccept: () => void
   onReject: () => void
+  isAccepting?: boolean
+  isRejecting?: boolean
   index?: number
 }
 
@@ -14,6 +16,8 @@ export function FriendRequestCard({
   request,
   onAccept,
   onReject,
+  isAccepting = false,
+  isRejecting = false,
 }: FriendRequestCardProps): React.ReactElement | null {
   const sender = request.sender
   if (!sender) return null
@@ -42,20 +46,30 @@ export function FriendRequestCard({
       <div className="flex gap-2 shrink-0">
         <Button
           onClick={onReject}
+          disabled={isAccepting || isRejecting}
           variant="outline"
           size="icon"
           className="size-9 rounded-lg"
           aria-label="Recusar pedido"
         >
-          <X className="size-4" />
+          {isRejecting ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <X className="size-4" />
+          )}
         </Button>
         <Button
           onClick={onAccept}
+          disabled={isAccepting || isRejecting}
           size="icon"
           className="size-9 rounded-lg"
           aria-label="Aceitar pedido"
         >
-          <Check className="size-4" strokeWidth={2.5} />
+          {isAccepting ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Check className="size-4" strokeWidth={2.5} />
+          )}
         </Button>
       </div>
     </div>

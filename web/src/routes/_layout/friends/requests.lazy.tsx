@@ -54,6 +54,9 @@ function FriendRequestsPage() {
   const rejectRequestMutation = useRejectFriendRequest()
   const pendingRequests = pendingRequestsData ?? []
 
+  const acceptingId = acceptRequestMutation.isPending ? acceptRequestMutation.variables : null
+  const rejectingId = rejectRequestMutation.isPending ? rejectRequestMutation.variables : null
+
   const handleRefresh = async (): Promise<void> => {
     if (cooldownTime > 0) return
     setIsRefreshing(true)
@@ -130,6 +133,8 @@ function FriendRequestsPage() {
                 key={request.id}
                 request={request}
                 index={i}
+                isAccepting={acceptingId === request.id}
+                isRejecting={rejectingId === request.id}
                 onAccept={() => handleAcceptRequest(request.id)}
                 onReject={() => handleRejectRequest(request.id)}
               />

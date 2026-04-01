@@ -50,6 +50,10 @@ function AddFriendsPage() {
     sendFriendRequestMutation.mutate(username)
   }
 
+  const pendingUsername = sendFriendRequestMutation.isPending
+    ? sendFriendRequestMutation.variables
+    : null
+
   const hasQuery = userSearchQuery.length >= 2
   const isDebouncing = userSearchQuery !== debouncedSearchQuery
   const showSkeleton = isSearching || isDebouncing
@@ -108,7 +112,7 @@ function AddFriendsPage() {
                 index={i}
                 status={getUserStatus(user.id)}
                 onAdd={() => handleAddFriend(user.displayUsername)}
-                isLoading={sendFriendRequestMutation.isPending}
+                isLoading={pendingUsername === user.displayUsername}
               />
             ))}
           </div>
