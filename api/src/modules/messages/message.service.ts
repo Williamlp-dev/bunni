@@ -127,6 +127,7 @@ function mapToMessageWithSender(row: RawMessageRow): MessageWithSender {
       displayUsername: row.senderDisplayUsername || row.senderRealUsername,
       username: row.senderRealUsername,
       image: row.senderImage,
+      bio: null,
     },
   }
 
@@ -149,11 +150,11 @@ function mapToMessageWithSender(row: RawMessageRow): MessageWithSender {
       createdAt: row.replyToCreatedAt || new Date(),
       sender: {
         id: row.replyToSenderId,
-        // Prefer snapshot name if available for historical consistency
         name: row.replySnapshotSenderName ?? row.replyToSenderName,
         displayUsername: row.replyToSenderDisplayUsername ?? "",
         username: row.replyToSenderRealUsername ?? "",
         image: row.replyToSenderImage,
+        bio: null,
       },
     }
   }

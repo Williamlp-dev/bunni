@@ -61,6 +61,7 @@ export type UserBasicInfo = {
   displayUsername: string
   username: string
   image: string | null
+  bio: string | null
 }
 
 export const USER_SELECT_FIELDS = {
@@ -69,4 +70,5 @@ export const USER_SELECT_FIELDS = {
   displayUsername: true,
   username: true,
   image: true,
+  bio: true,
 } as const

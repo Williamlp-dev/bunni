@@ -103,6 +103,7 @@ async function createNewConversation(
         image: users.image,
         username: users.username,
         displayUsername: users.displayUsername,
+        bio: users.bio,
       })
       .from(users)
       .where(inArray(users.id, [creatorId, participantId]))
@@ -118,6 +119,7 @@ async function createNewConversation(
       participants: participantUsers.map(u => ({
         ...u,
         displayUsername: u.displayUsername || u.username,
+        bio: u.bio,
       })),
     }
   })
@@ -163,6 +165,7 @@ export async function getConversationById(
       username: users.username,
       displayUsername: users.displayUsername,
       image: users.image,
+      bio: users.bio,
     })
     .from(conversationParticipants)
     .innerJoin(users, eq(conversationParticipants.userId, users.id))
@@ -175,6 +178,7 @@ export async function getConversationById(
     participants: participants.map(p => ({
       ...p,
       displayUsername: p.displayUsername || p.username,
+      bio: p.bio,
     })),
   }
 }
@@ -209,6 +213,7 @@ export async function getUserConversations(
       username: users.username,
       displayUsername: users.displayUsername,
       image: users.image,
+      bio: users.bio,
     })
     .from(conversationParticipants)
     .innerJoin(users, eq(conversationParticipants.userId, users.id))
@@ -230,6 +235,7 @@ export async function getUserConversations(
       username: p.username,
       displayUsername: p.displayUsername || p.username,
       image: p.image,
+      bio: p.bio,
     })),
   }))
 }
