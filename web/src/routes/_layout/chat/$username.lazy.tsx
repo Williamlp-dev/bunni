@@ -10,6 +10,8 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyCont
 import { Button } from "@/components/ui/button"
 import { UserX, Users, MessageCircle } from "lucide-react"
 import { useNavigate } from "@tanstack/react-router"
+import { UserProfileDrawer } from "@/modules/chat/components/user-profile-drawer"
+import { useState } from "react"
 
 const DeleteMessagesDialog = lazy(() => import("@/modules/chat/components/delete-messages-dialog").then(m => ({ default: m.DeleteMessagesDialog })))
 
@@ -123,12 +125,18 @@ function ChatWithUserPage() {
 
   const selectedCount = chat.selectedMessages.size
   const selectedMessageIds = new Set(chat.selectedMessages.keys())
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
 
   return (
     <>
       <main className="flex flex-1 flex-col h-full bg-background overflow-hidden">
         <div className="relative">
-          <ChatHeader title={chat.displayName} onBack={chat.navigateToChat} onClearChat={chat.handleClearChat} />
+          <ChatHeader 
+            title={chat.displayName} 
+            onBack={chat.navigateToChat} 
+            onClearChat={chat.handleClearChat}
+            onTitleClick={() => setIsProfileOpen(true)}
+          />
           {selectedCount > 0 && (
             <SelectionHeader
               selectedCount={selectedCount}
@@ -159,17 +167,40 @@ function ChatWithUserPage() {
           />
         </div>
 
-        <ChatInput
-          onSend={chat.handleSendMessage}
-          onSendAudio={chat.handleSendAudioMessage}
-          onSendImage={chat.handleSendImageMessage}
-          onTyping={chat.handleTyping}
-          disabled={!chat.conversationId}
-          isSendingAudio={chat.isSendingAudio}
-          replyingTo={chat.replyingTo}
-          onCancelReply={() => chat.setReplyingTo(null)}
-        />
+        {chat.isBlockedByMe ? (
+          <div className="flex flex-col bg-background border-t border-border px-6 py-4 items-center justify-center h-20">
+            <p className="text-sm text-muted-foreground text-center font-medium">
+              Você bloqueou este usuário. Para enviar uma mensagem, desbloqueie-o primeiro.
+            </p>
+          </div>
+        ) : chat.isBlockedByThem ? (
+          <div className="flex flex-col bg-background border-t border-border px-6 py-4 items-center justify-center h-20">
+            <p className="text-sm text-muted-foreground text-center font-medium">
+              Você não pode enviar mensagens a este usuário.
+            </p>
+          </div>
+        ) : (
+          <ChatInput
+            onSend={chat.handleSendMessage}
+            onSendAudio={chat.handleSendAudioMessage}
+            onSendImage={chat.handleSendImageMessage}
+            onTyping={chat.handleTyping}
+            disabled={!chat.conversationId}
+            isSendingAudio={chat.isSendingAudio}
+            replyingTo={chat.replyingTo}
+            onCancelReply={() => chat.setReplyingTo(null)}
+          />
+        )}
       </main>
+
+      {chat.targetUser && (
+        <UserProfileDrawer
+          open={isProfileOpen}
+          onOpenChange={setIsProfileOpen}
+          user={chat.targetUser}
+          isBlocked={chat.isBlockedByMe}
+        />
+      )}
 
       <Suspense fallback={null}>
         <DeleteMessagesDialog

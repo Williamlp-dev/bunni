@@ -11,6 +11,7 @@ export type PageHeaderProps = {
   backTo?: string
   backLabel?: string
   onBack?: () => void
+  onTitleClick?: () => void
   actions?: React.ReactNode
   startContent?: React.ReactNode
   className?: string
@@ -25,6 +26,7 @@ export function PageHeader({
   backTo,
   backLabel = "Voltar",
   onBack,
+  onTitleClick,
   actions,
   startContent,
   className,
@@ -100,7 +102,21 @@ export function PageHeader({
             <ChevronLeft className="size-5" />
           </Button>
         )}
-        <div className="flex flex-col min-w-0 py-2">
+        <div 
+          className={cn(
+            "flex flex-col min-w-0 py-2", 
+            onTitleClick && "cursor-pointer hover:opacity-80 transition-opacity"
+          )}
+          onClick={onTitleClick}
+          role={onTitleClick ? "button" : undefined}
+          tabIndex={onTitleClick ? 0 : undefined}
+          onKeyDown={(e) => {
+            if (onTitleClick && (e.key === "Enter" || e.key === " ")) {
+              e.preventDefault()
+              onTitleClick()
+            }
+          }}
+        >
           {eyebrow && <span className="text-[10px] font-semibold uppercase tracking-widest text-primary leading-none mb-1">{eyebrow}</span>}
           <h1 className="min-w-0 truncate text-base font-bold tracking-tight text-foreground md:text-lg">
             {title}

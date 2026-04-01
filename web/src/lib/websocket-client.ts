@@ -15,6 +15,8 @@ type WebSocketEventType =
   | "friend:request-received"
   | "friend:request-accepted"
   | "conversation:created"
+  | "conversation:blocked"
+  | "conversation:unblocked"
   | "error"
   | "disconnected"
 
@@ -89,6 +91,14 @@ type WebSocketEventData = {
       displayUsername: string
       image: string | null
     }>
+  }
+  "conversation:blocked": {
+    conversationId: string
+    byUserId: string
+  }
+  "conversation:unblocked": {
+    conversationId: string
+    byUserId: string
   }
   error: { message: string; details?: unknown }
   disconnected: { reason?: string }

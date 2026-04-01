@@ -157,11 +157,21 @@ export function useWebSocket(userId: string): {
       }))
     })
 
+    const unsubscribeBlocked = wsClient.on("conversation:blocked", () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] })
+    })
+
+    const unsubscribeUnblocked = wsClient.on("conversation:unblocked", () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] })
+    })
+
     return () => {
       unsubscribeMessage()
       unsubscribeMessageDeleted()
       unsubscribeTypingStart()
       unsubscribeTypingStop()
+      unsubscribeBlocked()
+      unsubscribeUnblocked()
       wsClient.release()
 
       Object.values(typingTimeoutsRef.current).forEach((timeout) => {

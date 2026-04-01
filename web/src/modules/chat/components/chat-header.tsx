@@ -14,15 +14,17 @@ type ChatHeaderProps = {
   title: string
   onBack: () => void
   onClearChat: () => void
+  onTitleClick?: () => void
 }
 
-export function ChatHeader({ title, onBack, onClearChat }: ChatHeaderProps) {
+export function ChatHeader({ title, onBack, onClearChat, onTitleClick }: ChatHeaderProps) {
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false)
 
   return (
     <>
       <PageHeaderUI
         title={title}
+        onTitleClick={onTitleClick}
         startContent={
           <Button
             aria-label="Voltar para conversas"

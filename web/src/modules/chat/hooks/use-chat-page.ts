@@ -7,7 +7,8 @@ import { useWebSocket } from "@/modules/chat/hooks/use-websocket"
 import { useMessageSelection } from "@/modules/chat/hooks/use-message-selection"
 import { useAudioUpload } from "@/modules/chat/hooks/use-audio-upload"
 import { useImageUpload } from "@/modules/chat/hooks/use-image-upload"
-import type { Message } from "@/lib/eden-types"
+import { useBlockStatus } from "@/modules/profile/hooks/use-block-user"
+import type { Message, Participant } from "@/lib/eden-types"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
@@ -50,7 +51,8 @@ export function useChatPage(username: string) {
   } = useSuspenseConversationByUsername(safeUsername)
 
   const conversationId = conversationData?.id ?? ""
-  const targetUser = conversationData?.targetUser
+  const participants = conversationData?.participants ?? []
+  const targetUser = participants.find((p: Participant) => p.id !== currentUserId) ?? null
   const displayName = targetUser?.name ?? safeUsername
 
   const {
@@ -65,6 +67,11 @@ export function useChatPage(username: string) {
   const imageUpload = useImageUpload()
   const { subscribe, sendTypingStart, sendTypingStop, typingUsers } = useWebSocket(currentUserId)
   const { selectedMessages, isSelectionMode, selectMessage, toggleMessage, clearSelection, copySelectedContent } = useMessageSelection()
+
+  const blockStatusQuery = useBlockStatus(targetUser?.id ?? "")
+  const isBlockedByMe = blockStatusQuery.data?.isBlockedByMe ?? false
+  const isBlockedByThem = blockStatusQuery.data?.isBlockedByThem ?? false
+  const isBlocked = isBlockedByMe || isBlockedByThem
 
   const queryClient = useQueryClient()
   const messages = flattenMessages(messagesData)
@@ -300,6 +307,9 @@ export function useChatPage(username: string) {
 
     messages,
 
+    isBlocked,
+    isBlockedByMe,
+    isBlockedByThem,
     isTyping,
     replyingTo,
     setReplyingTo,
