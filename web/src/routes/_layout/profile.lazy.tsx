@@ -1,28 +1,35 @@
-import { useRouteContext, createLazyFileRoute, useRouter } from "@tanstack/react-router"
-import { useState, useRef } from "react"
-import { Mail, Check, X, Pencil, LogOut, Loader2, AtSign, Camera, AlignLeft } from "lucide-react"
+import { useRouteContext, createLazyFileRoute } from "@tanstack/react-router"
+import { useState } from "react"
+import {
+  Mail,
+  Check,
+  LogOut,
+  Loader2,
+  AtSign,
+  Camera,
+  AlignLeft,
+} from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { InputRoot, InputField } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { PageLayout } from "@/components/ui/page-layout"
 import { PageHeader } from "@/components/ui/page-header"
 import { auth } from "@/lib/auth"
-import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { useProfileAvatar } from "@/modules/profile/hooks/use-profile-avatar"
+import { DeleteAccountDialog } from "@/modules/profile/components/delete-account-dialog"
+import { FieldBlock } from "@/modules/profile/components/field-block"
+import { ActionButtons } from "@/modules/profile/components/action-buttons"
 
 export const Route = createLazyFileRoute("/_layout/profile")({
   component: ProfilePage,
 })
 
-const MAX_AVATAR_SIZE = 1 * 1024 * 1024
 const MAX_BIO_LENGTH = 255
 const BIO_WARN_THRESHOLD = 220
-const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"] as const
-type AllowedAvatarType = (typeof ALLOWED_AVATAR_TYPES)[number]
 
 function ProfilePage() {
   const { session } = useRouteContext({ from: "/_layout" })
-  const router = useRouter()
   const user = session.user
 
   const [isEditingName, setIsEditingName] = useState(false)
@@ -35,15 +42,7 @@ function ProfilePage() {
   const [editingBio, setEditingBio] = useState(user.bio ?? "")
   const [isLoadingBio, setIsLoadingBio] = useState(false)
 
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
-  const [avatarError, setAvatarError] = useState<string | null>(null)
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const handleStartEditingName = () => {
-    setEditingName(savedName)
-    setIsEditingName(true)
-  }
+  const avatar = useProfileAvatar()
 
   const handleSaveName = async () => {
     const trimmed = editingName.trim()
@@ -51,7 +50,6 @@ function ProfilePage() {
       setIsEditingName(false)
       return
     }
-
     setIsLoadingName(true)
     try {
       await auth.updateUser({ name: trimmed })
@@ -64,24 +62,12 @@ function ProfilePage() {
     }
   }
 
-  const handleCancelName = () => {
-    setEditingName(savedName)
-    setIsEditingName(false)
-  }
-
-  const handleStartEditingBio = () => {
-    setEditingBio(savedBio ?? "")
-    setIsEditingBio(true)
-  }
-
   const handleSaveBio = async () => {
     const sanitized = editingBio.trim() || null
-
     if (sanitized === savedBio) {
       setIsEditingBio(false)
       return
     }
-
     setIsLoadingBio(true)
     try {
       const { error } = await auth.updateUser({ bio: sanitized } as Parameters<typeof auth.updateUser>[0])
@@ -95,65 +81,8 @@ function ProfilePage() {
     }
   }
 
-  const handleCancelBio = () => {
-    setEditingBio(savedBio ?? "")
-    setIsEditingBio(false)
-  }
-
-  const handleAvatarClick = () => {
-    if (isUploadingAvatar) return
-    setAvatarError(null)
-    fileInputRef.current?.click()
-  }
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    e.target.value = ""
-
-    if (!ALLOWED_AVATAR_TYPES.includes(file.type as AllowedAvatarType)) {
-      setAvatarError("Apenas JPEG, PNG e WEBP são permitidos")
-      return
-    }
-
-    if (file.size > MAX_AVATAR_SIZE) {
-      setAvatarError("Tamanho máximo: 1MB")
-      return
-    }
-
-    setIsUploadingAvatar(true)
-    setAvatarError(null)
-
-    try {
-      const { data: presigned, error: presignedError } = await api.users.avatar["presigned-url"].post({
-        contentType: file.type as AllowedAvatarType,
-      })
-      if (presignedError || !presigned) throw new Error("Falha ao gerar URL de upload")
-
-      const uploadRes = await fetch(presigned.uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": file.type },
-      })
-      if (!uploadRes.ok) throw new Error("Falha ao enviar imagem")
-
-      const { data: updated, error: updateError } = await api.users.avatar.patch({ key: presigned.key })
-      if (updateError || !updated) throw new Error("Falha ao atualizar avatar")
-
-      await auth.updateUser({ image: presigned.publicUrl })
-      setAvatarPreview(presigned.publicUrl)
-      await router.invalidate()
-    } catch {
-      setAvatarError("Erro ao atualizar avatar. Tente novamente.")
-    } finally {
-      setIsUploadingAvatar(false)
-    }
-  }
-
   const initials = user.name.slice(0, 2).toUpperCase()
   const username = user.displayUsername || user.username
-
   const bioLength = editingBio.length
   const bioRemaining = MAX_BIO_LENGTH - bioLength
   const isBioNearLimit = bioLength >= BIO_WARN_THRESHOLD
@@ -175,18 +104,18 @@ function ProfilePage() {
             <div className="flex flex-col items-center gap-1.5 shrink-0">
               <button
                 type="button"
-                onClick={handleAvatarClick}
+                onClick={avatar.handleAvatarClick}
                 className="relative group rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 aria-label="Trocar foto de perfil"
               >
                 <Avatar className="size-20 transition-opacity duration-150 group-hover:opacity-90">
-                  <AvatarImage src={avatarPreview ?? (user.image ?? undefined)} alt={user.name} />
+                  <AvatarImage src={avatar.avatarPreview ?? (user.image ?? undefined)} alt={user.name} />
                   <AvatarFallback delay={0} className="bg-primary/10 text-primary text-xl font-bold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
 
-                {isUploadingAvatar ? (
+                {avatar.isUploading ? (
                   <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
                     <Loader2 className="size-5 text-white animate-spin" />
                   </div>
@@ -197,18 +126,18 @@ function ProfilePage() {
                 )}
               </button>
 
-              {avatarError && (
+              {avatar.error && (
                 <p className="text-xs text-destructive text-center max-w-[120px] leading-tight animate-in fade-in slide-in-from-top-1 duration-150">
-                  {avatarError}
+                  {avatar.error}
                 </p>
               )}
 
               <input
-                ref={fileInputRef}
+                ref={avatar.fileInputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 className="hidden"
-                onChange={handleFileChange}
+                onChange={avatar.handleFileChange}
               />
             </div>
 
@@ -216,7 +145,7 @@ function ProfilePage() {
               <FieldBlock
                 label="Nome"
                 isEditing={isEditingName}
-                onEdit={handleStartEditingName}
+                onEdit={() => setIsEditingName(true)}
                 display={
                   <p className="text-lg font-semibold text-foreground tracking-tight">{savedName}</p>
                 }
@@ -231,13 +160,16 @@ function ProfilePage() {
                         className="text-sm"
                         onKeyDown={(e) => {
                           if (e.key === "Enter") handleSaveName()
-                          if (e.key === "Escape") handleCancelName()
+                          if (e.key === "Escape") {
+                            setEditingName(savedName)
+                            setIsEditingName(false)
+                          }
                         }}
                       />
                     </InputRoot>
                     <ActionButtons
                       onSave={handleSaveName}
-                      onCancel={handleCancelName}
+                      onCancel={() => { setEditingName(savedName); setIsEditingName(false) }}
                       isLoading={isLoadingName}
                       isDisabled={!editingName.trim()}
                       size="sm"
@@ -268,7 +200,7 @@ function ProfilePage() {
               <FieldBlock
                 label="Bio"
                 isEditing={isEditingBio}
-                onEdit={handleStartEditingBio}
+                onEdit={() => { setEditingBio(savedBio ?? ""); setIsEditingBio(true) }}
                 display={
                   savedBio ? (
                     <p className="text-sm font-medium text-foreground line-clamp-3">{savedBio}</p>
@@ -289,17 +221,19 @@ function ProfilePage() {
                       className={cn(
                         "w-full resize-none rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
-                        "transition-colors duration-150",
                         isBioOverLimit ? "border-destructive focus-visible:ring-destructive" : "border-input"
                       )}
                       onKeyDown={(e) => {
-                        if (e.key === "Escape") handleCancelBio()
+                        if (e.key === "Escape") {
+                          setEditingBio(savedBio ?? "")
+                          setIsEditingBio(false)
+                        }
                       }}
                     />
                     <div className="flex items-center justify-between gap-2">
                       <p
                         className={cn(
-                          "text-xs tabular-nums transition-all duration-150",
+                          "text-xs tabular-nums",
                           isBioOverLimit
                             ? "text-destructive font-semibold"
                             : isBioNearLimit
@@ -313,7 +247,7 @@ function ProfilePage() {
                       </p>
                       <ActionButtons
                         onSave={handleSaveBio}
-                        onCancel={handleCancelBio}
+                        onCancel={() => { setEditingBio(savedBio ?? ""); setIsEditingBio(false) }}
                         isLoading={isLoadingBio}
                         isDisabled={isBioOverLimit}
                         size="sm"
@@ -348,96 +282,24 @@ function ProfilePage() {
           </div>
         </div>
 
-        <div className="pt-2">
+        <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <Button
             onClick={async () => {
               await auth.signOut()
               window.location.href = "/sign-in"
             }}
             variant="destructive"
-            className="w-full sm:w-auto gap-2"
+            className="btn-press w-full sm:w-auto gap-2"
           >
             <LogOut className="size-4" />
             Sair da Conta
           </Button>
+
+          <DeleteAccountDialog />
         </div>
       </div>
     </PageLayout>
   )
 }
 
-type FieldBlockProps = {
-  label: string
-  isEditing: boolean
-  onEdit: () => void
-  display: React.ReactNode
-  editor: React.ReactNode
-}
 
-function FieldBlock({ label, isEditing, onEdit, display, editor }: FieldBlockProps) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
-        {!isEditing && (
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            onClick={onEdit}
-            className="size-5 text-muted-foreground/50 hover:text-foreground transition-all duration-150 hover:scale-110"
-          >
-            <Pencil className="size-3" />
-          </Button>
-        )}
-      </div>
-
-      <div
-        className={cn(
-          "transition-all duration-200",
-          isEditing && "animate-in fade-in slide-in-from-top-1"
-        )}
-        key={isEditing ? "editing" : "display"}
-      >
-        {isEditing ? editor : display}
-      </div>
-    </div>
-  )
-}
-
-type ActionButtonsProps = {
-  onSave: () => void
-  onCancel: () => void
-  isLoading: boolean
-  isDisabled?: boolean
-  size?: "sm" | "md"
-}
-
-function ActionButtons({ onSave, onCancel, isLoading, isDisabled, size = "md" }: ActionButtonsProps) {
-  const btnSize = size === "sm" ? "size-8" : "size-9"
-
-  return (
-    <div className="flex items-center gap-2">
-      <Button
-        onClick={onSave}
-        disabled={isLoading || isDisabled}
-        size="icon"
-        className={cn(btnSize, "shrink-0 rounded-lg transition-all duration-150 active:scale-95")}
-      >
-        {isLoading ? (
-          <Loader2 className="size-3.5 animate-spin" />
-        ) : (
-          <Check className="size-3.5" />
-        )}
-      </Button>
-      <Button
-        onClick={onCancel}
-        disabled={isLoading}
-        variant="outline"
-        size="icon"
-        className={cn(btnSize, "shrink-0 rounded-lg transition-all duration-150 active:scale-95")}
-      >
-        <X className="size-3.5" />
-      </Button>
-    </div>
-  )
-}
