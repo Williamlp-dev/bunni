@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useLocation, useRouterState } from "@tanstack/react-router"
+import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router"
 import { useRef } from "react"
 import { sessionQueryOptions } from "@/lib/auth"
 import { queryClient } from "@/lib/query-client"
@@ -58,11 +58,13 @@ const isDetailPath = (pathname: string): boolean => {
 
 export default function Layout() {
   const { session } = Route.useRouteContext()
-  const location = useLocation()
-  const isNavigating = useRouterState({ select: (s) => s.status === "pending" })
+  const { isNavigating, pathname } = useRouterState({
+    select: (s) => ({
+      isNavigating: s.status === "pending",
+      pathname: s.location.pathname,
+    }),
+  })
   useGlobalWsEvents()
-
-  const pathname = location.pathname
 
   const isChatWithUsername =
     pathname.startsWith("/chat/") &&
