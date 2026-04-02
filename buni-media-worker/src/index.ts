@@ -16,6 +16,7 @@ const ALLOWED_CONTENT_TYPES = new Set([
   "audio/mpeg",
   "audio/ogg",
   "audio/webm",
+  "audio/mp4",
   "application/octet-stream",
 ]);
 
@@ -24,25 +25,37 @@ function buildCacheKey(request: Request): Request {
   return new Request(url.toString(), { method: "GET" });
 }
 
-function buildSuccessResponse(object: R2ObjectBody): Response {
+function buildResponseHeaders(object: R2ObjectBody | R2Object, isRange: boolean): Headers {
   const contentType = object.httpMetadata?.contentType ?? "application/octet-stream";
-
-  return new Response(object.body, {
-    headers: {
-      "Content-Type": contentType,
-      "Cache-Control": `public, max-age=${CACHE_MAX_AGE}, immutable`,
-      "ETag": object.httpEtag,
-      "Last-Modified": object.uploaded.toUTCString(),
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-      "X-Cache": "MISS",
-    },
+  const headers = new Headers({
+    "Content-Type": contentType,
+    "Cache-Control": `public, max-age=${CACHE_MAX_AGE}, immutable`,
+    "ETag": object.httpEtag,
+    "Last-Modified": object.uploaded.toUTCString(),
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+    "Accept-Ranges": "bytes",
   });
+
+  if (isRange && "range" in object && object.range) {
+    const r = object.range as any;
+    if (r.offset !== undefined && r.length !== undefined) {
+      headers.set("Content-Range", `bytes ${r.offset}-${r.offset + r.length - 1}/${object.size}`);
+      headers.set("Content-Length", r.length.toString());
+    } else if (r.suffix !== undefined) {
+      headers.set("Content-Range", `bytes ${object.size - r.suffix}-${object.size - 1}/${object.size}`);
+      headers.set("Content-Length", r.suffix.toString());
+    }
+  } else {
+    headers.set("Content-Length", object.size.toString());
+  }
+
+  return headers;
 }
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const { method } = request;
+    const { method, headers } = request;
 
     if (method === "OPTIONS") {
       return new Response(null, {
@@ -65,31 +78,47 @@ export default {
       return new Response("Not found", { status: 404 });
     }
 
-    const cacheKey = buildCacheKey(request);
-    const cache = caches.default;
+    const isRangeRequested = headers.has("Range");
 
-    const cachedResponse = await cache.match(cacheKey);
-    if (cachedResponse) {
-      const response = new Response(cachedResponse.body, cachedResponse);
-      response.headers.set("X-Cache", "HIT");
-      return response;
+
+    if (!isRangeRequested) {
+      const cacheKey = buildCacheKey(request);
+      const cache = caches.default;
+      const cachedResponse = await cache.match(cacheKey);
+
+      if (cachedResponse) {
+        const response = new Response(cachedResponse.body, cachedResponse);
+        response.headers.set("X-Cache", "HIT");
+        return response;
+      }
     }
 
-    const object = await env.BUCKET.get(key);
+    const object = await env.BUCKET.get(key, { range: request.headers });
 
-    if (!object) {
+    if (!object || !('body' in object)) {
       return new Response("Not found", { status: 404 });
     }
 
     const contentType = object.httpMetadata?.contentType ?? "application/octet-stream";
+    const baseContentType = contentType.split(";")[0].trim();
 
-    if (!ALLOWED_CONTENT_TYPES.has(contentType)) {
+    if (!ALLOWED_CONTENT_TYPES.has(baseContentType)) {
       return new Response("Forbidden", { status: 403 });
     }
 
-    const response = buildSuccessResponse(object);
+    const isPartialContent = isRangeRequested && ('range' in object) && !!object.range;
+    const responseHeaders = buildResponseHeaders(object, isPartialContent);
+    responseHeaders.set("X-Cache", "MISS");
 
-    ctx.waitUntil(cache.put(cacheKey, response.clone()));
+    const response = new Response((object as R2ObjectBody).body, {
+      status: isPartialContent ? 206 : 200,
+      headers: responseHeaders,
+    });
+
+    if (!isRangeRequested) {
+      const cacheKey = buildCacheKey(request);
+      ctx.waitUntil(caches.default.put(cacheKey, response.clone()));
+    }
 
     return response;
   },
