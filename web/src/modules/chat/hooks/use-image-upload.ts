@@ -1,10 +1,7 @@
 import { useMutation } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 
-type UploadImageResult = {
-  publicUrl: string
-  key: string
-}
+
 
 export function useImageUpload() {
   return useMutation({
@@ -14,8 +11,8 @@ export function useImageUpload() {
     }: {
       file: File
       conversationId: string
-    }): Promise<UploadImageResult> => {
-      const contentType = file.type as "image/jpeg" | "image/png" | "image/webp"
+    }): Promise<{ publicUrl: string; key: string }> => {
+      const contentType = file.type
 
       const { data, error } = await api.uploads["presigned-url"].post({
         contentType,

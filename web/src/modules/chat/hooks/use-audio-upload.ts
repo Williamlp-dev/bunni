@@ -1,10 +1,7 @@
 import { useMutation } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 
-type UploadAudioResult = {
-  publicUrl: string
-  key: string
-}
+
 
 export function useAudioUpload() {
   return useMutation({
@@ -16,7 +13,7 @@ export function useAudioUpload() {
       blob: Blob
       duration: number
       conversationId: string
-    }): Promise<UploadAudioResult> => {
+    }): Promise<{ publicUrl: string; key: string }> => {
       const mimeType = blob.type
       if (!mimeType) throw new Error("Invalid blob type")
 
