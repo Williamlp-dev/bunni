@@ -102,7 +102,9 @@ Certifique-se de estar autenticado antes de consumir os endpoints protegidos.
     const status = set.status ?? 200
     console.log(`⬅️  ${method} ${url.pathname} ${status}`)
   })
-  .get("/", () => "Hello Elysia", { detail: { hide: true } })
+  .get("/", ({ redirect }) => redirect("/docs"), {
+    detail: { hide: true },
+  })
   .listen(env.PORT);
 
 
