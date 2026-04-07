@@ -78,6 +78,7 @@ export function AudioRecorderProvider({ onSend, children }: AudioRecorderProvide
           'audio/ogg;codecs=opus',
           'audio/webm;codecs=opus',
           'audio/webm',
+          'audio/mp4',
         ] as const
       ).find((t) => MediaRecorder.isTypeSupported(t)) ?? ''
 
