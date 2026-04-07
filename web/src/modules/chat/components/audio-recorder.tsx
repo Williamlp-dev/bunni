@@ -73,9 +73,13 @@ export function AudioRecorderProvider({ onSend, children }: AudioRecorderProvide
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
 
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : 'audio/webm'
+      const mimeType = (
+        [
+          'audio/ogg;codecs=opus',
+          'audio/webm;codecs=opus',
+          'audio/webm',
+        ] as const
+      ).find((t) => MediaRecorder.isTypeSupported(t)) ?? ''
 
       const recorder = new MediaRecorder(stream, { mimeType })
       mediaRecorderRef.current = recorder
@@ -87,7 +91,7 @@ export function AudioRecorderProvider({ onSend, children }: AudioRecorderProvide
         }
       }
 
-      recorder.start(100)
+      recorder.start()
       setStatus('recording')
       setDuration(0)
     } catch {
