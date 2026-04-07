@@ -1,125 +1,80 @@
 type Env = {
-  BUCKET: R2Bucket;
-};
-
-const CACHE_MAX_AGE = 60 * 60 * 24 * 365;
-
-const ALLOWED_CONTENT_TYPES = new Set([
-  "image/webp",
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/svg+xml",
-  "image/avif",
-  "video/mp4",
-  "video/webm",
-  "audio/mpeg",
-  "audio/ogg",
-  "audio/webm",
-  "audio/mp4",
-  "application/octet-stream",
-]);
-
-function buildCacheKey(request: Request): Request {
-  const url = new URL(request.url);
-  return new Request(url.toString(), { method: "GET" });
+  BUCKET: R2Bucket
 }
 
-function buildResponseHeaders(object: R2ObjectBody | R2Object, isRange: boolean): Headers {
-  const contentType = object.httpMetadata?.contentType ?? "application/octet-stream";
-  const headers = new Headers({
-    "Content-Type": contentType,
-    "Cache-Control": `public, max-age=${CACHE_MAX_AGE}, immutable`,
+function buildHeaders(object: R2Object | R2ObjectBody): Headers {
+  return new Headers({
+    "Content-Type": object.httpMetadata?.contentType || "application/octet-stream",
+    "Cache-Control": "public, max-age=31536000, immutable",
     "ETag": object.httpEtag,
     "Last-Modified": object.uploaded.toUTCString(),
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
     "Accept-Ranges": "bytes",
-  });
-
-  if (isRange && "range" in object && object.range) {
-    const r = object.range as any;
-    if (r.offset !== undefined && r.length !== undefined) {
-      headers.set("Content-Range", `bytes ${r.offset}-${r.offset + r.length - 1}/${object.size}`);
-      headers.set("Content-Length", r.length.toString());
-    } else if (r.suffix !== undefined) {
-      headers.set("Content-Range", `bytes ${object.size - r.suffix}-${object.size - 1}/${object.size}`);
-      headers.set("Content-Length", r.suffix.toString());
-    }
-  } else {
-    headers.set("Content-Length", object.size.toString());
-  }
-
-  return headers;
+    "Access-Control-Allow-Origin": "*",
+  })
 }
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const { method, headers } = request;
+    const { method, url } = request
 
     if (method === "OPTIONS") {
       return new Response(null, {
+        status: 204,
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
           "Access-Control-Max-Age": "86400",
         },
-      });
+      })
     }
 
     if (method !== "GET" && method !== "HEAD") {
-      return new Response("Method not allowed", { status: 405 });
+      return new Response("Method not allowed", { status: 405 })
     }
 
-    const url = new URL(request.url);
-    const key = url.pathname.slice(1);
-
-    if (!key) {
-      return new Response("Not found", { status: 404 });
+    const cache = caches.default
+    const cachedResponse = await cache.match(request)
+    if (cachedResponse) {
+      return cachedResponse
     }
 
-    const isRangeRequested = headers.has("Range");
+    const key = new URL(url).pathname.slice(1)
+    if (!key) return new Response("Not found", { status: 404 })
 
-
-    if (!isRangeRequested) {
-      const cacheKey = buildCacheKey(request);
-      const cache = caches.default;
-      const cachedResponse = await cache.match(cacheKey);
-
-      if (cachedResponse) {
-        const response = new Response(cachedResponse.body, cachedResponse);
-        response.headers.set("X-Cache", "HIT");
-        return response;
-      }
+    if (method === "HEAD") {
+      const meta = await env.BUCKET.head(key)
+      if (!meta) return new Response("Not found", { status: 404 })
+      
+      const response = new Response(null, {
+        headers: {
+          ...Object.fromEntries(buildHeaders(meta)),
+          "Content-Length": meta.size.toString(),
+        },
+      })
+      ctx.waitUntil(cache.put(request, response.clone()))
+      return response
     }
 
-    const object = await env.BUCKET.get(key, { range: request.headers });
+    const object = await env.BUCKET.get(key, { range: request.headers })
 
-    if (!object || !('body' in object)) {
-      return new Response("Not found", { status: 404 });
+    if (!object || !("body" in object)) {
+      return new Response("Not found", { status: 404 })
     }
 
-    const contentType = object.httpMetadata?.contentType ?? "application/octet-stream";
-    const baseContentType = contentType.split(";")[0].trim();
+    const headers = buildHeaders(object)
+    let status = 200
 
-    if (!ALLOWED_CONTENT_TYPES.has(baseContentType)) {
-      return new Response("Forbidden", { status: 403 });
+    if (object.range) {
+      status = 206
+      const { offset, length } = object.range as { offset: number; length: number }
+      headers.set("Content-Range", `bytes ${offset}-${offset + length - 1}/${object.size}`)
+      headers.set("Content-Length", length.toString())
+    } else {
+      headers.set("Content-Length", object.size.toString())
     }
 
-    const isPartialContent = isRangeRequested && ('range' in object) && !!object.range;
-    const responseHeaders = buildResponseHeaders(object, isPartialContent);
-    responseHeaders.set("X-Cache", "MISS");
-
-    const response = new Response((object as R2ObjectBody).body, {
-      status: isPartialContent ? 206 : 200,
-      headers: responseHeaders,
-    });
-
-    if (!isRangeRequested) {
-      const cacheKey = buildCacheKey(request);
-      ctx.waitUntil(caches.default.put(cacheKey, response.clone()));
-    }
-
-    return response;
+    const response = new Response(object.body, { status, headers })
+    ctx.waitUntil(cache.put(request, response.clone()))
+    return response
   },
-} satisfies ExportedHandler<Env>;
+} satisfies ExportedHandler<Env>
