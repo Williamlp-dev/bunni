@@ -8,6 +8,7 @@ import { ConversationSidebar } from "@/modules/chat/components/conversation-side
 import { useGlobalWsEvents } from "@/hooks/use-global-ws-events"
 import { NavigationProgressBar } from "@/modules/navigation/components/navigation-progress-bar"
 import { GlobalAudioProvider } from "@/modules/chat/hooks/use-global-audio.tsx"
+import { SplashScreen } from "@/components/ui/splash-screen"
 
 export const Route = createFileRoute("/_layout")({
   beforeLoad: async () => {
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_layout")({
   },
   staleTime: Infinity,
   component: Layout,
+  pendingComponent: SplashScreen,
 })
 
 const TAB_ORDER = ["/chat", "/friends", "/friends/requests", "/profile"]
