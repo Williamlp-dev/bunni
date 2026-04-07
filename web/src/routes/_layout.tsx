@@ -7,6 +7,7 @@ import { MobileBottomNav } from "@/modules/navigation/components/mobile-bottom-n
 import { ConversationSidebar } from "@/modules/chat/components/conversation-sidebar"
 import { useGlobalWsEvents } from "@/hooks/use-global-ws-events"
 import { NavigationProgressBar } from "@/modules/navigation/components/navigation-progress-bar"
+import { GlobalAudioProvider } from "@/modules/chat/hooks/use-global-audio.tsx"
 
 export const Route = createFileRoute("/_layout")({
   beforeLoad: async () => {
@@ -111,46 +112,48 @@ export default function Layout() {
         : ""
 
   return (
-    <div className="flex h-dvh bg-background overflow-hidden selection:bg-primary selection:text-primary-foreground">
-      <div className="relative z-10 flex w-full h-full">
-        <div className="hidden md:flex">
-          <VerticalNav />
-        </div>
+    <GlobalAudioProvider>
+      <div className="flex h-dvh bg-background overflow-hidden selection:bg-primary selection:text-primary-foreground">
+        <div className="relative z-10 flex w-full h-full">
+          <div className="hidden md:flex">
+            <VerticalNav />
+          </div>
 
-        <div
-          className={`
-            w-full md:w-80 shrink-0 h-full
-            md:translate-x-0 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
-            ${isMobileDetailView ? "max-md:-translate-x-[20%]" : "max-md:translate-x-0"}
-          `}
-        >
-          <ConversationSidebar
-            user={session.user}
-            activeUsername={
-              isChatWithUsername ? pathname.split("/").pop() : undefined
-            }
-          />
-        </div>
-
-        <div
-          className={`
-            fixed inset-0 z-20 h-dvh bg-background w-full overflow-hidden
-            md:static md:inset-auto md:flex-1 md:h-full md:translate-x-0
-            transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
-            ${isMobileDetailView ? "translate-x-0" : "translate-x-full md:translate-x-0"}
-          `}
-        >
-          <NavigationProgressBar isVisible={isNavigating} />
           <div
-            key={animKey}
-            className={`w-full h-full md:animate-none ${slideClass}`}
+            className={`
+              w-full md:w-80 shrink-0 h-full
+              md:translate-x-0 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
+              ${isMobileDetailView ? "max-md:-translate-x-[20%]" : "max-md:translate-x-0"}
+            `}
           >
-            <Outlet />
+            <ConversationSidebar
+              user={session.user}
+              activeUsername={
+                isChatWithUsername ? pathname.split("/").pop() : undefined
+              }
+            />
+          </div>
+
+          <div
+            className={`
+              fixed inset-0 z-20 h-dvh bg-background w-full overflow-hidden
+              md:static md:inset-auto md:flex-1 md:h-full md:translate-x-0
+              transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
+              ${isMobileDetailView ? "translate-x-0" : "translate-x-full md:translate-x-0"}
+            `}
+          >
+            <NavigationProgressBar isVisible={isNavigating} />
+            <div
+              key={animKey}
+              className={`w-full h-full md:animate-none ${slideClass}`}
+            >
+              <Outlet />
+            </div>
           </div>
         </div>
-      </div>
 
-      {!isChatWithUsername && <MobileBottomNav />}
-    </div>
+        {!isChatWithUsername && <MobileBottomNav />}
+      </div>
+    </GlobalAudioProvider>
   )
 }

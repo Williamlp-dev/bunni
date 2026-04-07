@@ -17,11 +17,11 @@ export function useAudioUpload() {
       duration: number
       conversationId: string
     }): Promise<UploadAudioResult> => {
-      const rawMime = blob.type || "audio/webm"
-      const baseMime = rawMime.split(";")[0] as "audio/webm" | "audio/mp4"
+      const mimeType = blob.type
+      if (!mimeType) throw new Error("Invalid blob type")
 
       const { data, error } = await api.uploads["presigned-url"].post({
-        contentType: baseMime,
+        contentType: mimeType,
         audioDuration: duration,
         conversationId,
       })
@@ -33,7 +33,7 @@ export function useAudioUpload() {
         method: "PUT",
         body: blob,
         headers: {
-          "Content-Type": blob.type || "audio/webm",
+          "Content-Type": mimeType,
         },
       })
 
