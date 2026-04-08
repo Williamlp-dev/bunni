@@ -6,6 +6,7 @@ export type LogoProps = {
   size?: "sm" | "md" | "lg"
   showText?: boolean
   iconOnly?: boolean
+  textOnly?: boolean
   textClassName?: string
   variant?: "default" | "sticker" | "red" | "contrast"
 }
@@ -15,6 +16,7 @@ export function Logo({
   size = "md",
   showText = true,
   iconOnly = false,
+  textOnly = false,
   textClassName,
   variant = "default",
 }: LogoProps) {
@@ -36,8 +38,8 @@ export function Logo({
   const current = configs[size]
 
   return (
-    <div className={cn("flex items-center select-none", !iconOnly && "gap-3", className)}>
-      <BunniIcon variant={variant} className={cn("object-contain", current.icon)} />
+    <div className={cn("flex items-center select-none", !iconOnly && !textOnly && "gap-3", className)}>
+      {!textOnly && <BunniIcon variant={variant} className={cn("object-contain", current.icon)} />}
       {showText && !iconOnly && (
         <span
           className={cn(
