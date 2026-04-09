@@ -13,6 +13,10 @@ export type Message = MessagesResponse extends { messages: Array<infer M> }
   ? M
   : never
 
+export type MessageStatusType = "sending" | "sent" | "delivered" | "read" | "error"
+
+export type LocalMessage = Message & { status: MessageStatusType }
+
 export type ConversationsResponse = InferResponseData<Conversations['get']>
 export type Conversation = ConversationsResponse extends { conversations: Array<infer C> } ? C : never
 

@@ -7,6 +7,8 @@ const DISCONNECT_DELAY_MS = 100
 type WebSocketEventType =
   | "connected"
   | "message:new"
+  | "message:delivered"
+  | "message:read"
   | "message:deleted"
   | "typing:start"
   | "typing:stop"
@@ -51,6 +53,13 @@ type WebSocketEventData = {
       deletedAt: string | null
       createdAt: string
     }
+  }
+  "message:delivered": {
+    conversationId: string
+  }
+  "message:read": {
+    conversationId: string
+    readBy: string
   }
   "message:deleted": {
     id: string
@@ -221,6 +230,10 @@ class WebSocketClient {
 
   sendTypingStop(conversationId: string): void {
     this.send({ type: "typing:stop", conversationId })
+  }
+
+  sendMessageRead(conversationId: string): void {
+    this.send({ type: "message:read", conversationId })
   }
 
 

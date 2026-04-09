@@ -9,11 +9,23 @@ import { useAudioUpload } from "@/modules/chat/hooks/use-audio-upload"
 import { useImageUpload } from "@/modules/chat/hooks/use-image-upload"
 import { useBlockStatus } from "@/modules/profile/hooks/use-block-user"
 import type { Message, Participant } from "@/lib/eden-types"
-import { useQueryClient } from "@tanstack/react-query"
+import { useQueryClient, type QueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
+type SessionUser = {
+  id: string
+  name: string | null
+  image?: string | null
+  username?: string | null
+  displayUsername?: string | null
+}
+
+type RouteSession = {
+  user: SessionUser
+}
+
 function buildOptimisticMessage(
-  session: any,
+  session: RouteSession,
   currentUserId: string,
   conversationId: string,
   overrides: Partial<Message>
@@ -41,6 +53,28 @@ function buildOptimisticMessage(
   }
 }
 
+function markMessageAsError(
+  queryClient: QueryClient,
+  conversationId: string,
+  messageId: string
+): void {
+  queryClient.setQueryData<InfiniteMessagesData>(
+    messagesKeys.list(conversationId),
+    (old) => {
+      if (!old?.pages) return old
+      return {
+        ...old,
+        pages: old.pages.map((page) => ({
+          ...page,
+          messages: page.messages.map((m: Message) =>
+            m.id === messageId ? { ...m, status: "error" } : m
+          ),
+        })),
+      }
+    }
+  )
+}
+
 export function useChatPage(username: string) {
   const { session } = useRouteContext({ from: "/_layout" })
   const navigate = useNavigate()
@@ -65,7 +99,7 @@ export function useChatPage(username: string) {
   const sendMessageMutation = useSendMessage()
   const audioUpload = useAudioUpload()
   const imageUpload = useImageUpload()
-  const { subscribe, sendTypingStart, sendTypingStop, typingUsers } = useWebSocket(currentUserId)
+  const { subscribe, sendTypingStart, sendTypingStop, sendMessageRead, typingUsers } = useWebSocket(currentUserId, { activeConversationId: conversationId || null })
   const { selectedMessages, isSelectionMode, selectMessage, toggleMessage, clearSelection, copySelectedContent } = useMessageSelection()
 
   const blockStatusQuery = useBlockStatus(targetUser?.id ?? "")
@@ -75,24 +109,6 @@ export function useChatPage(username: string) {
 
   const queryClient = useQueryClient()
   const messages = flattenMessages(messagesData)
-
-  const insertOptimisticIntoCache = (msg: Message) => {
-    queryClient.setQueryData<InfiniteMessagesData>(
-      messagesKeys.list(msg.conversationId),
-      (old) => {
-        if (!old?.pages?.length) return old
-        const lastPageIndex = old.pages.length - 1
-        return {
-          ...old,
-          pages: old.pages.map((page, i) =>
-            i === lastPageIndex
-              ? { ...page, messages: [...page.messages, msg] }
-              : page
-          ),
-        }
-      }
-    )
-  }
 
   const typingUserId = conversationId ? (typingUsers[conversationId] ?? null) : null
   const isTyping = typingUserId !== null && typingUserId !== currentUserId
@@ -127,11 +143,10 @@ export function useChatPage(username: string) {
   const clearConversation = useClearConversation()
 
   useEffect(() => {
-    if (conversationId) {
-      subscribe(conversationId)
-    }
-  }, [conversationId, subscribe])
-
+    if (!conversationId) return
+    subscribe(conversationId)
+    sendMessageRead(conversationId)
+  }, [conversationId, subscribe, sendMessageRead])
 
   const handleDeleteRequest = (msgs: Message[]) => {
     setDeleteTargetMessages(msgs)
@@ -219,8 +234,6 @@ export function useChatPage(username: string) {
       audioDuration: duration,
     })
 
-    insertOptimisticIntoCache(optMessage)
-
     try {
       const result = await audioUpload.mutateAsync({ blob, duration, conversationId })
       await sendMessageMutation.mutateAsync({
@@ -230,8 +243,10 @@ export function useChatPage(username: string) {
         type: "audio",
         audioUrl: result.publicUrl,
         audioDuration: duration,
+        optimisticMessage: optMessage,
       })
     } catch {
+      markMessageAsError(queryClient, conversationId, messageId)
       toast.error("Falha ao enviar áudio", {
         description: "Ocorreu um erro no upload. Verifique sua conexão e tente novamente.",
         position: "bottom-center",
@@ -251,8 +266,6 @@ export function useChatPage(username: string) {
       imageUrl: URL.createObjectURL(file),
     })
 
-    insertOptimisticIntoCache(optMessage)
-
     try {
       const result = await imageUpload.mutateAsync({ file, conversationId })
       await sendMessageMutation.mutateAsync({
@@ -261,8 +274,10 @@ export function useChatPage(username: string) {
         content: "",
         type: "image",
         imageUrl: result.publicUrl,
+        optimisticMessage: optMessage,
       })
     } catch {
+      markMessageAsError(queryClient, conversationId, messageId)
       toast.error("Falha ao enviar imagem", {
         description: "Não foi possível fazer o upload. Tente novamente.",
         position: "bottom-center",
@@ -272,9 +287,8 @@ export function useChatPage(username: string) {
   }
 
   const handleTyping = () => {
-    if (conversationId) {
-      sendTypingStart(conversationId)
-    }
+    if (!conversationId) return
+    sendTypingStart(conversationId)
   }
 
   const handleCopySelected = async () => {

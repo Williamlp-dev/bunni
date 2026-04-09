@@ -7,6 +7,14 @@ import {
 import { api } from "@/lib/api"
 import type { Message, MessagesResponse } from "@/lib/eden-types"
 
+const STATUS_PRIORITY: Record<string, number> = {
+  error: 0,
+  sending: 0,
+  sent: 1,
+  delivered: 2,
+  read: 3,
+}
+
 export type InfiniteMessagesData = {
   pages: MessagesResponse[]
   pageParams: (string | null)[]
@@ -155,9 +163,15 @@ export function useSendMessage() {
           )
 
           const updatedMessages = alreadyExists
-            ? lastPage.messages.map((m: Message) =>
-                m.id === realMessage.id ? realMessage : m
-              )
+            ? lastPage.messages.map((m: Message) => {
+                if (m.id !== realMessage.id) return m
+                const cachedPriority = STATUS_PRIORITY[m.status as string] ?? 0
+                const serverPriority = STATUS_PRIORITY[realMessage.status as string] ?? 0
+                return {
+                  ...realMessage,
+                  status: cachedPriority > serverPriority ? m.status : realMessage.status,
+                }
+              })
             : [...lastPage.messages, realMessage]
 
           return {

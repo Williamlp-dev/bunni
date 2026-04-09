@@ -3,22 +3,23 @@ import { useQueryClient } from "@tanstack/react-query"
 import { wsClient } from "@/lib/websocket-client"
 import { messagesKeys, type InfiniteMessagesData } from "@/modules/chat/hooks/use-messages"
 import type { Message } from "@/lib/eden-types"
+import type { MessageStatusType } from "@/lib/eden-types"
 
-type TypingUsers = {
-  [conversationId: string]: string | null
-}
-
-type TypingTimeouts = {
-  [conversationId: string]: ReturnType<typeof setTimeout> | null
-}
+type TypingUsers = Record<string, string | null>
+type TypingTimeouts = Record<string, ReturnType<typeof setTimeout> | null>
 
 const TYPING_THROTTLE_MS = 2000
 const TYPING_TIMEOUT_MS = 3000
 
-export function useWebSocket(userId: string): {
+type UseWebSocketOptions = {
+  activeConversationId?: string | null
+}
+
+export function useWebSocket(userId: string, options?: UseWebSocketOptions): {
   subscribe: (conversationId: string) => void
   sendTypingStart: (conversationId: string) => void
   sendTypingStop: (conversationId: string) => void
+  sendMessageRead: (conversationId: string) => void
   typingUsers: TypingUsers
 } {
   const queryClient = useQueryClient()
@@ -26,8 +27,10 @@ export function useWebSocket(userId: string): {
   const typingTimeoutsRef = useRef<TypingTimeouts>({})
   const lastTypingSentRef = useRef<{ [conversationId: string]: number }>({})
   const userIdRef = useRef<string>(userId)
+  const activeConversationIdRef = useRef<string | null | undefined>(options?.activeConversationId)
 
   userIdRef.current = userId
+  activeConversationIdRef.current = options?.activeConversationId
 
   useEffect(() => {
     wsClient.acquire()
@@ -84,6 +87,56 @@ export function useWebSocket(userId: string): {
                 ? { ...page, messages: [...page.messages, newMessage] }
                 : page
             ),
+          }
+        }
+      )
+
+      if (data.conversationId === activeConversationIdRef.current) {
+        wsClient.sendMessageRead(data.conversationId)
+      }
+    })
+
+    const unsubscribeDelivered = wsClient.on("message:delivered", (data) => {
+      queryClient.setQueryData<InfiniteMessagesData>(
+        messagesKeys.list(data.conversationId),
+        (old) => {
+          if (!old?.pages) return old
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              messages: page.messages.map((m: Message) => {
+                if (m.senderId === userIdRef.current && (m.status as MessageStatusType) === "sent") {
+                  return { ...m, status: "delivered" }
+                }
+                return m
+              }),
+            })),
+          }
+        }
+      )
+    })
+
+    const unsubscribeRead = wsClient.on("message:read", (data) => {
+      queryClient.setQueryData<InfiniteMessagesData>(
+        messagesKeys.list(data.conversationId),
+        (old) => {
+          if (!old?.pages) return old
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              messages: page.messages.map((m: Message) => {
+                const status = m.status as MessageStatusType
+                if (
+                  m.senderId === userIdRef.current &&
+                  (status === "delivered" || status === "sent" || status === "sending")
+                ) {
+                  return { ...m, status: "read" }
+                }
+                return m
+              }),
+            })),
           }
         }
       )
@@ -157,16 +210,14 @@ export function useWebSocket(userId: string): {
       }))
     })
 
-    const unsubscribeBlocked = wsClient.on("conversation:blocked", () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] })
-    })
-
-    const unsubscribeUnblocked = wsClient.on("conversation:unblocked", () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] })
-    })
+    const invalidateUsers = () => queryClient.invalidateQueries({ queryKey: ["users"] })
+    const unsubscribeBlocked = wsClient.on("conversation:blocked", invalidateUsers)
+    const unsubscribeUnblocked = wsClient.on("conversation:unblocked", invalidateUsers)
 
     return () => {
       unsubscribeMessage()
+      unsubscribeDelivered()
+      unsubscribeRead()
       unsubscribeMessageDeleted()
       unsubscribeTypingStart()
       unsubscribeTypingStop()
@@ -201,10 +252,15 @@ export function useWebSocket(userId: string): {
     wsClient.sendTypingStop(conversationId)
   }, [])
 
+  const sendMessageRead = useCallback((conversationId: string) => {
+    wsClient.sendMessageRead(conversationId)
+  }, [])
+
   return {
     subscribe,
     sendTypingStart,
     sendTypingStop,
+    sendMessageRead,
     typingUsers,
   }
 }
