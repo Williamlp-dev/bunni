@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, inArray, isNull, aliasedTable } from "drizzle-orm"
+import { and, asc, desc, eq, gt, inArray, isNull, ne, aliasedTable } from "drizzle-orm"
 import { db } from "@/database/client"
 import { messages } from "@/database/schema/messages"
 import { messageDeletions } from "@/database/schema/message-deletions"
@@ -10,6 +10,7 @@ import { MessageServiceError } from "@/shared/errors/message.errors"
 import { isBlocked } from "@/shared/helpers/relationship.helpers"
 import { deleteFromR2 } from "@/modules/uploads/upload.service"
 import { env } from "@/env"
+import { isUserOnline, sendToUser } from "@/modules/websocket/connection-manager"
 
 
 
@@ -99,25 +100,31 @@ const MESSAGE_SELECT_FIELDS = {
   replySnapshotSenderName: messages.replySnapshotSenderName,
 }
 
-function mapToMessageWithSender(row: RawMessageRow): MessageWithSender {
-  const isDeleted = !!row.deletedAt
-  const isAudio = row.type === "audio"
+function resolveMessageContent(row: RawMessageRow): string {
+  if (row.deletedAt) return "Mensagem apagada"
+  if (row.type === "audio") return "🎤 Mensagem de voz"
+  if (row.type === "image") return "📷 Imagem"
+  return row.content ? decrypt(row.content) : "Mensagem apagada"
+}
 
+function resolveReplyContent(row: RawMessageRow): string {
+  if (row.replyToDeletedAt) return "Mensagem apagada"
+  if (row.replySnapshotContent) return decrypt(row.replySnapshotContent)
+  if (row.replyToType === "audio") return "🎤 Mensagem de voz"
+  if (row.replyToType === "image") return "📷 Imagem"
+  return row.replyToContent ? decrypt(row.replyToContent) : "Mensagem apagada"
+}
+
+function mapToMessageWithSender(row: RawMessageRow): MessageWithSender {
   const message: MessageWithSender = {
     id: row.id,
     conversationId: row.conversationId,
     senderId: row.senderId,
-    content: isDeleted
-      ? "Mensagem apagada"
-      : row.type === "audio"
-        ? "🎤 Mensagem de voz"
-        : row.type === "image"
-          ? "📷 Imagem"
-          : (!row.content ? "Mensagem apagada" : decrypt(row.content)),
+    content: resolveMessageContent(row),
     type: row.type,
-    audioUrl: isDeleted ? null : row.audioUrl,
+    audioUrl: row.deletedAt ? null : row.audioUrl,
     audioDuration: row.audioDuration,
-    imageUrl: isDeleted ? null : row.imageUrl,
+    imageUrl: row.deletedAt ? null : row.imageUrl,
     createdAt: row.createdAt,
     deletedAt: row.deletedAt,
     status: row.status,
@@ -134,17 +141,7 @@ function mapToMessageWithSender(row: RawMessageRow): MessageWithSender {
   if (row.replyToId && row.replyToSenderId) {
     message.replyTo = {
       id: row.replyToId,
-      content: row.replyToDeletedAt
-        ? "Mensagem apagada"
-        : row.replySnapshotContent
-          ? decrypt(row.replySnapshotContent)
-          : row.replyToType === "audio"
-            ? "🎤 Mensagem de voz"
-            : row.replyToType === "image"
-              ? "📷 Imagem"
-              : row.replyToContent
-                ? decrypt(row.replyToContent)
-                : "Mensagem apagada",
+      content: resolveReplyContent(row),
       senderId: row.replyToSenderId,
       deletedAt: row.replyToDeletedAt,
       createdAt: row.replyToCreatedAt || new Date(),
@@ -278,7 +275,13 @@ export async function deleteMessagesForEveryone(
   }
 
   const targetMessages = await db
-    .select({ id: messages.id, senderId: messages.senderId, conversationId: messages.conversationId })
+    .select({
+      id: messages.id,
+      senderId: messages.senderId,
+      conversationId: messages.conversationId,
+      audioUrl: messages.audioUrl,
+      imageUrl: messages.imageUrl,
+    })
     .from(messages)
     .where(inArray(messages.id, messageIds))
 
@@ -297,12 +300,7 @@ export async function deleteMessagesForEveryone(
   const conversationId = targetMessages[0].conversationId
   const foundIds = targetMessages.map((m) => m.id)
 
-  const mediaMessages = await db
-    .select({ audioUrl: messages.audioUrl, imageUrl: messages.imageUrl })
-    .from(messages)
-    .where(inArray(messages.id, foundIds))
-
-  const r2Keys = mediaMessages.flatMap(({ audioUrl, imageUrl }) => {
+  const r2Keys = targetMessages.flatMap(({ audioUrl, imageUrl }) => {
     const keys: string[] = []
     const domain = env.R2_PUBLIC_DOMAIN
     for (const url of [audioUrl, imageUrl]) {
@@ -413,24 +411,90 @@ export async function sendMessage(
   const finalContent = messageType === "audio" ? "Mensagem de voz" : messageType === "image" ? "Imagem" : content
   const encryptedContent = encrypt(finalContent)
 
+  const recipientId = otherParticipants[0]
+  const isRecipientOnline = recipientId ? isUserOnline(recipientId) : false
+  const messageStatus: "sent" | "delivered" = isRecipientOnline ? "delivered" : "sent"
+
+  const messageValues = {
+    id: options?.id,
+    conversationId,
+    senderId,
+    content: encryptedContent,
+    type: messageType,
+    audioUrl: options?.audioUrl ?? null,
+    audioDuration: options?.audioDuration ?? null,
+    imageUrl: options?.imageUrl ?? null,
+    replyToId,
+    replySnapshotContent: snapshotContent,
+    replySnapshotSenderName: snapshotSenderName,
+    status: messageStatus,
+  }
+
   const [message] = await db
     .insert(messages)
-    .values({
-      id: options?.id,
-      conversationId,
-      senderId,
-      content: encryptedContent,
-      type: messageType,
-      audioUrl: options?.audioUrl ?? null,
-      audioDuration: options?.audioDuration ?? null,
-      imageUrl: options?.imageUrl ?? null,
-      replyToId,
-      replySnapshotContent: snapshotContent,
-      replySnapshotSenderName: snapshotSenderName,
+    .values(messageValues)
+    .onConflictDoUpdate({
+      target: messages.id,
+      set: { id: messages.id },
     })
     .returning()
 
+  if (isRecipientOnline) {
+    sendToUser(senderId, "message:delivered", { conversationId })
+  }
+
   return getMessageById(message.id) as Promise<MessageWithSender>
+}
+
+export async function markPendingAsDelivered(userId: string): Promise<void> {
+  const updated = await db
+    .update(messages)
+    .set({ status: "delivered" })
+    .where(
+      and(
+        ne(messages.senderId, userId),
+        eq(messages.status, "sent")
+      )
+    )
+    .returning({
+      conversationId: messages.conversationId,
+      senderId: messages.senderId,
+    })
+
+  const perSenderConversations = new Map<string, Set<string>>()
+  for (const row of updated) {
+    const convSet = perSenderConversations.get(row.senderId) ?? new Set<string>()
+    convSet.add(row.conversationId)
+    perSenderConversations.set(row.senderId, convSet)
+  }
+
+  for (const [senderId, conversationIds] of perSenderConversations) {
+    for (const conversationId of conversationIds) {
+      sendToUser(senderId, "message:delivered", { conversationId })
+    }
+  }
+}
+
+export async function markConversationAsRead(
+  userId: string,
+  conversationId: string
+): Promise<void> {
+  const updated = await db
+    .update(messages)
+    .set({ status: "read" })
+    .where(
+      and(
+        eq(messages.conversationId, conversationId),
+        ne(messages.senderId, userId),
+        ne(messages.status, "read")
+      )
+    )
+    .returning({ senderId: messages.senderId })
+
+  const uniqueSenderIds = [...new Set(updated.map((r) => r.senderId))]
+  for (const senderId of uniqueSenderIds) {
+    sendToUser(senderId, "message:read", { conversationId, readBy: userId })
+  }
 }
 
 export async function getMessageById(

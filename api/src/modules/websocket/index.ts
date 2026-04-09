@@ -6,6 +6,7 @@ import {
 } from "./connection-manager"
 import { handleMessage } from "./handlers"
 import { notifyOnlineStatus } from "@/modules/users/user.service"
+import { markPendingAsDelivered } from "@/modules/messages/message.service"
 import type { ServerWebSocket } from "bun"
 
 export type WSData = {
@@ -49,6 +50,8 @@ export const wsPlugin = new Elysia({ name: "websocket" })
       Object.assign(ws.data, { userId })
 
       addConnection(ws.raw as ServerWebSocket<WSData>, userId)
+
+      await markPendingAsDelivered(userId)
 
       ws.send(JSON.stringify({ event: "connected", data: { userId } }))
 

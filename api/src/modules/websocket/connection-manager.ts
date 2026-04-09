@@ -121,6 +121,15 @@ export function isUserOnline(userId: string): boolean {
   return connections !== undefined && connections.size > 0
 }
 
+export function isUserSubscribedToConversation(userId: string, conversationId: string): boolean {
+  const subscribers = conversationSubscribers.get(conversationId)
+  if (!subscribers) return false
+  for (const ws of subscribers) {
+    if (ws.data.userId === userId) return true
+  }
+  return false
+}
+
 export function getOnlineUserIds(): string[] {
   return Array.from(userConnections.keys())
 }

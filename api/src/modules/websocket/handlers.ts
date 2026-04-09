@@ -6,6 +6,7 @@ import {
   subscribeToConversation,
 } from "./connection-manager"
 import { isParticipant } from "@/modules/conversations/conversation.service"
+import { markConversationAsRead } from "@/modules/messages/message.service"
 
 export const subscribeSchema = t.Object({
   type: t.Literal("subscribe"),
@@ -23,10 +24,16 @@ export const messageSendSchema = t.Object({
   content: t.String({ minLength: 1, maxLength: 4000 }),
 })
 
+export const messageReadSchema = t.Object({
+  type: t.Literal("message:read"),
+  conversationId: t.String({ format: "uuid" }),
+})
+
 export const webSocketMessageSchema = t.Union([
   subscribeSchema,
   typingSchema,
   messageSendSchema,
+  messageReadSchema,
 ])
 
 export type WebSocketMessage = Static<typeof webSocketMessageSchema>
@@ -61,6 +68,9 @@ export async function handleMessage(
         break
       case "message:send":
         ws.send(JSON.stringify({ event: "error", data: { code: "NOT_SUPPORTED", message: "Use HTTP to send messages" } }))
+        break
+      case "message:read":
+        await handleMessageRead(ws, validMessage)
         break
     }
   } catch (error) {
@@ -111,4 +121,18 @@ async function handleTyping(
     undefined, 
     userId
   )
+}
+
+async function handleMessageRead(
+  ws: ElysiaWebSocket,
+  payload: Static<typeof messageReadSchema>
+): Promise<void> {
+  const { conversationId } = payload
+  const userId = ws.data.userId
+
+  if (!userId) return
+
+  if (!ws.data.conversationIds.has(conversationId)) return
+
+  await markConversationAsRead(userId, conversationId)
 }
