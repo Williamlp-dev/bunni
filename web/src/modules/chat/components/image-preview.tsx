@@ -29,6 +29,8 @@ export function ImagePreview({ src, alt = "Imagem", className, variant }: ImageP
           "transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]",
           className
         )}
+        onPointerDown={(e) => e.stopPropagation()}
+        onPointerUp={(e) => e.stopPropagation()}
       >
         {!isLoaded && (
           <div className="w-64 h-48 rounded-2xl animate-pulse" />
