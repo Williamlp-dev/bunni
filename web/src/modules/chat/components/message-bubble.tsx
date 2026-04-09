@@ -156,7 +156,7 @@ export function MessageBubble({
           {actionMenu && (
             <div
               className={cn(
-                "absolute top-1/2 -translate-y-1/2 opacity-0 group-hover/bubble:opacity-100 transition-opacity z-10 p-1",
+                "hidden md:block absolute top-1/2 -translate-y-1/2 opacity-0 group-hover/bubble:opacity-100 transition-opacity z-10 p-1",
                 isSent ? "right-full mr-1" : "left-full ml-1"
               )}
             >
