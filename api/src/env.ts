@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const envSchema = z.object({
   DATABASE_URL: z.string().url().startsWith("postgresql://"),
+  DIRECT_URL: z.string().url().startsWith("postgresql://").optional(),
   PORT: z.coerce.number().positive().default(3333),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   CORS_ORIGIN: z.string().default("http://localhost:5173").transform((val) =>
