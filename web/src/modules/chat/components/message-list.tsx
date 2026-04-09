@@ -13,6 +13,7 @@ import { MessageSquare, Trash2, Ban, ChevronDown, Reply, Loader2, CheckSquare } 
 import { formatTimestamp, groupMessagesByDate } from "@/modules/chat/utils/chat-utils"
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer"
 import type { Message } from "@/lib/eden-types"
+import type { MessageStatusType } from "@/lib/eden-types"
 
 type MessageListProps = {
   messages: Message[]
@@ -131,6 +132,7 @@ function MessageItem({
           imageUrl={message.imageUrl}
           variant={isOwner ? "sent" : "received"}
           timestamp={formatTimestamp(message.createdAt)}
+          status={isOwner ? (message.status as MessageStatusType) : undefined}
           showAvatar={!isOwner}
           avatarSrc={message.sender?.image || undefined}
           avatarFallback={(message.sender?.name || message.sender?.displayUsername || activeParticipantName || "?").slice(0, 2).toUpperCase()}

@@ -4,6 +4,46 @@ import { MessageContent } from "./message"
 import { MessageReply } from "./message-reply"
 import { AudioPlayer } from "./audio-player"
 import { ImagePreview } from "./image-preview"
+import { Clock, AlertCircle } from "lucide-react"
+import type { MessageStatusType } from "@/lib/eden-types"
+
+function DoubleCheckSvg({ isRead }: { isRead: boolean }): React.ReactElement {
+  return (
+    <svg
+      width="18"
+      height="11"
+      viewBox="0 0 18 11"
+      className={cn("shrink-0", isRead ? "text-primary" : "text-primary-foreground/70")}
+      fill="none"
+    >
+      <path d="M1 5.5L4.5 9L13 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 5.5L8.5 9L17 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function TickIndicator({ status }: { status: MessageStatusType }): React.ReactElement | null {
+  if (status === "sending") {
+    return <Clock size={14} className="text-primary-foreground/60 shrink-0" />
+  }
+
+  if (status === "error") {
+    return <AlertCircle size={14} className="text-destructive shrink-0" />
+  }
+
+  if (status === "sent") {
+    return (
+      <svg width="14" height="11" viewBox="0 0 14 11" className="shrink-0 text-primary-foreground/70" fill="none">
+        <path d="M1 5.5L4.5 9L13 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+
+  if (status === "delivered") return <DoubleCheckSvg isRead={false} />
+  if (status === "read") return <DoubleCheckSvg isRead={true} />
+
+  return null
+}
 
 export type MessageBubbleProps = {
   content: string
@@ -18,6 +58,7 @@ export type MessageBubbleProps = {
   avatarFallback?: string
   className?: string
   children?: React.ReactNode
+  status?: MessageStatusType
   replyTo?: {
     id: string
     content: string
@@ -41,6 +82,7 @@ export function MessageBubble({
   avatarFallback,
   className,
   children,
+  status,
   replyTo,
   actionMenu,
   onReplyClick,
@@ -124,14 +166,15 @@ export function MessageBubble({
         </div>
       </div>
 
-      {timestamp && (
+      {(timestamp || (isSent && status)) && (
         <div
           className={cn(
-            "text-xs text-muted-foreground mt-0.5 px-1",
+            "flex items-center gap-1 text-xs text-muted-foreground mt-0.5 px-1",
             isSent ? "mr-1" : "ml-10"
           )}
         >
-          {timestamp}
+          {timestamp && <span>{timestamp}</span>}
+          {isSent && status && <TickIndicator status={status} />}
         </div>
       )}
     </div>
