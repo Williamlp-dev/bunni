@@ -32,6 +32,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
   const [message, setMessage] = useState("")
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value)
@@ -43,6 +44,9 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
     if (message.trim()) {
       onSend(message.trim())
       setMessage("")
+      requestAnimationFrame(() => {
+        inputRef.current?.focus()
+      })
     }
   }
 
@@ -189,12 +193,16 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
                   </span>
                 </div>
                 <InputField
+                  ref={inputRef}
                   value={message}
                   onChange={handleChange}
                   onKeyDown={handleKeyDown}
                   placeholder=""
                   disabled={disabled}
                   autoFocus={!!replyingTo}
+                  autoComplete="off"
+                  autoCapitalize="sentences"
+                  inputMode="text"
                   className="text-sm z-10"
                 />
               </InputRoot>
