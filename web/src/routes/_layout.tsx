@@ -67,7 +67,7 @@ export default function Layout() {
       pathname: s.location.pathname,
     }),
   })
-  useGlobalWsEvents()
+  useGlobalWsEvents(session.user.id)
 
   const isChatWithUsername =
     pathname.startsWith("/chat/") &&
