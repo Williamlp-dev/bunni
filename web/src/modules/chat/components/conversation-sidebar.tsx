@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty-state'
 import { ConversationItem } from "./conversation-item"
 import { useSuspenseConversations } from "../hooks/use-conversations"
-import { getOtherParticipant, formatTimestamp } from "@/modules/chat/utils/chat-utils"
+import { getOtherParticipant, formatTimestamp, formatLastMessagePreview } from "@/modules/chat/utils/chat-utils"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AsyncBoundary } from "@/components/async-boundary"
 import type { User } from "@/modules/auth/types"
@@ -57,7 +57,17 @@ function ConversationList({
     )
   })
 
-  if (filteredConversations.length === 0) {
+  const sortedConversations = [...filteredConversations].sort((a, b) => {
+    const aDate = a.lastMessage
+      ? new Date(a.lastMessage.createdAt).getTime()
+      : new Date(a.updatedAt).getTime()
+    const bDate = b.lastMessage
+      ? new Date(b.lastMessage.createdAt).getTime()
+      : new Date(b.updatedAt).getTime()
+    return bDate - aDate
+  })
+
+  if (sortedConversations.length === 0) {
     return (
       <div className="px-4 py-8">
         <Empty>
@@ -72,21 +82,36 @@ function ConversationList({
 
   return (
     <>
-      {(filteredConversations as Conversation[]).map((conversation) => {
+      {sortedConversations.map((conversation) => {
         const participant = getOtherParticipant(conversation, user.id)
         if (!participant) return null
 
         const rawUsername = participant.displayUsername || participant.username
         const username = rawUsername && rawUsername !== "undefined" ? rawUsername : participant.username
 
+        const isActive = activeUsername === username
+        const unreadCount = conversation.unreadCount ?? 0
+        const conversationState = isActive ? "active" : unreadCount > 0 ? "unread" : "default"
+
+        const timestampSource = conversation.lastMessage?.createdAt ?? conversation.updatedAt
+        const timestamp = formatTimestamp(
+          typeof timestampSource === "string" ? timestampSource : timestampSource.toString()
+        )
+
+        const lastMessagePreview = conversation.lastMessage
+          ? formatLastMessagePreview(conversation.lastMessage, user.id)
+          : undefined
+
+
         return (
           <ConversationItem
             key={conversation.id}
             name={participant.name}
-            lastMessage={conversation.lastMessage?.content}
-            timestamp={formatTimestamp(conversation.updatedAt)}
+            lastMessage={lastMessagePreview}
+            timestamp={timestamp}
             avatarSrc={participant.image ?? undefined}
-            state={activeUsername === username ? "active" : "default"}
+            unreadCount={unreadCount}
+            state={conversationState}
             onClick={() => {
               if (username) {
                 navigate({ to: `/chat/$username`, params: { username } })
