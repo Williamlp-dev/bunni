@@ -5,7 +5,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query"
 import { api } from "@/lib/api"
-import type { Message, MessagesResponse } from "@/lib/eden-types"
+import { conversationsKeys } from "@/modules/chat/hooks/use-conversations"
+import type { Message, MessagesResponse, ConversationsList } from "@/lib/eden-types"
 
 const STATUS_PRIORITY: Record<string, number> = {
   error: 0,
@@ -36,7 +37,6 @@ type SendMessageParams = {
 type UseMessagesOptions = {
   limit?: number
 }
-
 
 export const messagesKeys = {
   all: ["messages"] as const,
@@ -135,11 +135,43 @@ export function useSendMessage() {
             const lastPageIndex = old.pages.length - 1
             return {
               ...old,
-              pages: old.pages.map((page, i) =>
+              pages: old.pages.map((page: MessagesResponse, i: number) =>
                 i === lastPageIndex
                   ? { ...page, messages: [...page.messages, variables.optimisticMessage!] }
                   : page
               ),
+            }
+          }
+        )
+
+        const optMsg = variables.optimisticMessage
+        const now = new Date()
+        queryClient.setQueryData(
+          conversationsKeys.list(),
+          (old: ConversationsList | undefined) => {
+            if (!old?.conversations) return old
+            type ConvItem = ConversationsList["conversations"][number]
+            return {
+              conversations: old.conversations
+                .map((conv: ConvItem) => {
+                  if (conv.id !== variables.conversationId) return conv
+                  return {
+                    ...conv,
+                    updatedAt: now,
+                    lastMessage: {
+                      id: optMsg.id,
+                      content: optMsg.content,
+                      type: optMsg.type as "text" | "audio" | "image",
+                      senderId: optMsg.senderId,
+                      createdAt: now,
+                    },
+                  }
+                })
+                .sort((a: ConvItem, b: ConvItem) => {
+                  const aDate = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : new Date(a.updatedAt).getTime()
+                  const bDate = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : new Date(b.updatedAt).getTime()
+                  return bDate - aDate
+                }),
             }
           }
         )
@@ -176,11 +208,41 @@ export function useSendMessage() {
 
           return {
             ...old,
-            pages: old.pages.map((page, i) =>
+            pages: old.pages.map((page: MessagesResponse, i: number) =>
               i === lastPageIndex
                 ? { ...page, messages: updatedMessages }
                 : page
             ),
+          }
+        }
+      )
+
+      queryClient.setQueryData(
+        conversationsKeys.list(),
+        (old: ConversationsList | undefined) => {
+          if (!old?.conversations) return old
+          type ConvItem = ConversationsList["conversations"][number]
+          return {
+            conversations: old.conversations
+              .map((conv: ConvItem) => {
+                if (conv.id !== variables.conversationId) return conv
+                return {
+                  ...conv,
+                  updatedAt: realMessage.createdAt,
+                  lastMessage: {
+                    id: realMessage.id,
+                    content: realMessage.content,
+                    type: realMessage.type as "text" | "audio" | "image",
+                    senderId: realMessage.senderId,
+                    createdAt: realMessage.createdAt,
+                  },
+                }
+              })
+              .sort((a: ConvItem, b: ConvItem) => {
+                const aDate = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : new Date(a.updatedAt).getTime()
+                const bDate = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : new Date(b.updatedAt).getTime()
+                return bDate - aDate
+              }),
           }
         }
       )

@@ -8,9 +8,11 @@ import { useMessageSelection } from "@/modules/chat/hooks/use-message-selection"
 import { useAudioUpload } from "@/modules/chat/hooks/use-audio-upload"
 import { useImageUpload } from "@/modules/chat/hooks/use-image-upload"
 import { useBlockStatus } from "@/modules/profile/hooks/use-block-user"
+import { conversationsKeys } from "@/modules/chat/hooks/use-conversations"
 import type { Message, Participant } from "@/lib/eden-types"
 import { useQueryClient, type QueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
+import { wsClient } from "@/lib/websocket-client"
 
 type SessionUser = {
   id: string
@@ -146,7 +148,24 @@ export function useChatPage(username: string) {
     if (!conversationId) return
     subscribe(conversationId)
     sendMessageRead(conversationId)
-  }, [conversationId, subscribe, sendMessageRead])
+
+    queryClient.setQueryData<{ conversations: Array<{ id: string; unreadCount: number }> }>(
+      conversationsKeys.list(),
+      (old) => {
+        if (!old?.conversations) return old
+        return {
+          ...old,
+          conversations: old.conversations.map((conv) =>
+            conv.id === conversationId ? { ...conv, unreadCount: 0 } : conv
+          ),
+        }
+      }
+    )
+
+    return () => {
+      wsClient.unsubscribe(conversationId)
+    }
+  }, [conversationId, subscribe, sendMessageRead, queryClient])
 
   const handleDeleteRequest = (msgs: Message[]) => {
     setDeleteTargetMessages(msgs)
