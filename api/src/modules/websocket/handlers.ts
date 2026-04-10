@@ -4,12 +4,18 @@ import {
   type ElysiaWebSocket,
   broadcastToConversation,
   subscribeToConversation,
+  unsubscribeFromConversation,
 } from "./connection-manager"
 import { isParticipant } from "@/modules/conversations/conversation.service"
 import { markConversationAsRead } from "@/modules/messages/message.service"
 
 export const subscribeSchema = t.Object({
   type: t.Literal("subscribe"),
+  conversationId: t.String({ format: "uuid" }),
+})
+
+export const unsubscribeSchema = t.Object({
+  type: t.Literal("unsubscribe"),
   conversationId: t.String({ format: "uuid" }),
 })
 
@@ -29,11 +35,17 @@ export const messageReadSchema = t.Object({
   conversationId: t.String({ format: "uuid" }),
 })
 
+export const pingSchema = t.Object({
+  type: t.Literal("ping")
+})
+
 export const webSocketMessageSchema = t.Union([
   subscribeSchema,
+  unsubscribeSchema,
   typingSchema,
   messageSendSchema,
   messageReadSchema,
+  pingSchema
 ])
 
 export type WebSocketMessage = Static<typeof webSocketMessageSchema>
@@ -62,6 +74,9 @@ export async function handleMessage(
       case "subscribe":
         await handleSubscribe(ws, validMessage)
         break
+      case "unsubscribe":
+        handleUnsubscribe(ws, validMessage)
+        break
       case "typing:start":
       case "typing:stop":
         await handleTyping(ws, validMessage)
@@ -71,6 +86,8 @@ export async function handleMessage(
         break
       case "message:read":
         await handleMessageRead(ws, validMessage)
+        break
+      case "ping":
         break
     }
   } catch (error) {
@@ -102,6 +119,16 @@ async function handleSubscribe(
   ws.send(JSON.stringify({ event: "subscribed", data: { conversationId } }))
 }
 
+function handleUnsubscribe(
+  ws: ElysiaWebSocket,
+  payload: Static<typeof unsubscribeSchema>
+): void {
+  const userId = ws.data.userId
+  if (!userId) return
+
+  unsubscribeFromConversation(ws, payload.conversationId)
+}
+
 async function handleTyping(
   ws: ElysiaWebSocket,
   payload: Static<typeof typingSchema>
@@ -131,8 +158,6 @@ async function handleMessageRead(
   const userId = ws.data.userId
 
   if (!userId) return
-
-  if (!ws.data.conversationIds.has(conversationId)) return
 
   await markConversationAsRead(userId, conversationId)
 }

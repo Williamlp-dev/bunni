@@ -131,6 +131,7 @@ class WebSocketClient {
   // Ref counting
   private activeConsumers = 0
   private disconnectTimeout: ReturnType<typeof setTimeout> | null = null
+  private pingInterval: ReturnType<typeof setInterval> | null = null
 
   /**
    * Acquires a connection usage lock.
@@ -177,6 +178,7 @@ class WebSocketClient {
     this.socket.onopen = () => {
       this.reconnectAttempts = 0
       this.resubscribeToConversations()
+      this.startPing()
     }
 
     this.socket.onmessage = (event) => {
@@ -184,6 +186,7 @@ class WebSocketClient {
     }
 
     this.socket.onclose = () => {
+      this.stopPing()
       this.emit("disconnected", { reason: "Connection closed" })
       if (!this.isManualDisconnect && this.activeConsumers > 0) {
         this.scheduleReconnect()
@@ -200,6 +203,7 @@ class WebSocketClient {
 
     this.isManualDisconnect = true
     this.subscribedConversations.clear()
+    this.stopPing()
     this.socket?.close()
     this.socket = null
   }
@@ -215,6 +219,22 @@ class WebSocketClient {
     }, DISCONNECT_DELAY_MS)
   }
 
+  private startPing(): void {
+    this.stopPing()
+    this.pingInterval = setInterval(() => {
+      if (this.socket?.readyState === WebSocket.OPEN) {
+        this.send({ type: "ping" })
+      }
+    }, 25000)
+  }
+
+  private stopPing(): void {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval)
+      this.pingInterval = null
+    }
+  }
+
   subscribe(conversationId: string): void {
     this.subscribedConversations.add(conversationId)
     this.send({ type: "subscribe", conversationId })
@@ -222,6 +242,7 @@ class WebSocketClient {
 
   unsubscribe(conversationId: string): void {
     this.subscribedConversations.delete(conversationId)
+    this.send({ type: "unsubscribe", conversationId })
   }
 
   sendTypingStart(conversationId: string): void {
