@@ -2,8 +2,7 @@ import { useEffect, useCallback, useState, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { wsClient } from "@/lib/websocket-client"
 import { messagesKeys, type InfiniteMessagesData } from "@/modules/chat/hooks/use-messages"
-import type { Message } from "@/lib/eden-types"
-import type { MessageStatusType } from "@/lib/eden-types"
+import type { Message, MessageStatusType } from "@/lib/eden-types"
 
 type TypingUsers = Record<string, string | null>
 type TypingTimeouts = Record<string, ReturnType<typeof setTimeout> | null>
