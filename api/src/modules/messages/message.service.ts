@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, gt, inArray, isNull, ne, aliasedTable } from "drizzle-orm"
 import { db } from "@/database/client"
 import { messages } from "@/database/schema/messages"
+import { conversations, conversationParticipants } from "@/database/schema/conversations"
 import { messageDeletions } from "@/database/schema/message-deletions"
 import { users } from "@/database/schema/users"
 import { encrypt, decrypt } from "@/lib/crypto"
@@ -10,7 +11,7 @@ import { MessageServiceError } from "@/shared/errors/message.errors"
 import { isBlocked } from "@/shared/helpers/relationship.helpers"
 import { deleteFromR2 } from "@/modules/uploads/upload.service"
 import { env } from "@/env"
-import { isUserOnline, sendToUser } from "@/modules/websocket/connection-manager"
+import { isUserOnline, isUserSubscribedToConversation, sendToUser } from "@/modules/websocket/connection-manager"
 
 
 
@@ -413,7 +414,15 @@ export async function sendMessage(
 
   const recipientId = otherParticipants[0]
   const isRecipientOnline = recipientId ? isUserOnline(recipientId) : false
-  const messageStatus: "sent" | "delivered" = isRecipientOnline ? "delivered" : "sent"
+  const isRecipientInChat = recipientId
+    ? isUserSubscribedToConversation(recipientId, conversationId)
+    : false
+
+  const messageStatus: "sent" | "delivered" | "read" = isRecipientInChat
+    ? "read"
+    : isRecipientOnline
+      ? "delivered"
+      : "sent"
 
   const messageValues = {
     id: options?.id,
@@ -439,7 +448,14 @@ export async function sendMessage(
     })
     .returning()
 
-  if (isRecipientOnline) {
+  await db
+    .update(conversations)
+    .set({ updatedAt: new Date() })
+    .where(eq(conversations.id, conversationId))
+
+  if (isRecipientInChat) {
+    sendToUser(senderId, "message:read", { conversationId, readBy: recipientId! })
+  } else if (isRecipientOnline) {
     sendToUser(senderId, "message:delivered", { conversationId })
   }
 
@@ -479,6 +495,13 @@ export async function markConversationAsRead(
   userId: string,
   conversationId: string
 ): Promise<void> {
+  const [latestMessage] = await db
+    .select({ id: messages.id })
+    .from(messages)
+    .where(eq(messages.conversationId, conversationId))
+    .orderBy(desc(messages.createdAt))
+    .limit(1)
+
   const updated = await db
     .update(messages)
     .set({ status: "read" })
@@ -490,6 +513,18 @@ export async function markConversationAsRead(
       )
     )
     .returning({ senderId: messages.senderId })
+
+  if (latestMessage) {
+    await db
+      .update(conversationParticipants)
+      .set({ lastReadMessageId: latestMessage.id })
+      .where(
+        and(
+          eq(conversationParticipants.conversationId, conversationId),
+          eq(conversationParticipants.userId, userId)
+        )
+      )
+  }
 
   const uniqueSenderIds = [...new Set(updated.map((r) => r.senderId))]
   for (const senderId of uniqueSenderIds) {

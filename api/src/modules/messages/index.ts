@@ -2,7 +2,8 @@ import { Elysia } from "elysia"
 import { authMacro } from "@/plugins/better-auth"
 import * as MessageService from "@/modules/messages/message.service"
 import { MessageServiceError } from "@/shared/errors/message.errors"
-import { broadcastToConversation } from "@/modules/websocket/connection-manager"
+import { broadcastToConversation, sendToUser } from "@/modules/websocket/connection-manager"
+import { getOtherParticipantIds } from "@/modules/conversations/conversation.service"
 import {
   SendMessageBodySchema,
   BatchMessageIdsSchema,
@@ -48,26 +49,27 @@ export const messagesRoutes = new Elysia({ prefix: "/messages" })
         }
       )
 
-      await broadcastToConversation(
-        params.conversationId,
-        "message:new",
-        {
-          id: message.id,
-          conversationId: message.conversationId,
-          senderId: message.senderId,
-          content: message.content,
-          type: message.type,
-          audioUrl: message.audioUrl,
-          audioDuration: message.audioDuration,
-          imageUrl: message.imageUrl,
-          createdAt: message.createdAt.toISOString(),
-          sender: message.sender,
-          replyTo: message.replyTo,
-        },
-        undefined,
-        undefined, // excludeUserId
-        user.id // senderId
-      )
+      const otherParticipants = await getOtherParticipantIds(user.id, params.conversationId)
+
+      const payload = {
+        id: message.id,
+        conversationId: message.conversationId,
+        senderId: message.senderId,
+        content: message.content,
+        type: message.type,
+        audioUrl: message.audioUrl,
+        audioDuration: message.audioDuration,
+        imageUrl: message.imageUrl,
+        createdAt: message.createdAt.toISOString(),
+        sender: message.sender,
+        replyTo: message.replyTo,
+      }
+
+      sendToUser(user.id, "message:new", payload)
+      
+      for (const participantId of otherParticipants) {
+        sendToUser(participantId, "message:new", payload)
+      }
 
       set.status = 201
       return message
