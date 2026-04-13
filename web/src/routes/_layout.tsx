@@ -67,12 +67,12 @@ export default function Layout() {
       pathname: s.location.pathname,
     }),
   })
-  useGlobalWsEvents(session.user.id)
-
   const isChatWithUsername =
     pathname.startsWith("/chat/") &&
     pathname !== "/chat/" &&
     pathname !== "/chat"
+  useGlobalWsEvents(session.user.id, isChatWithUsername ? pathname.split("/").pop() : undefined)
+
   const isProfile = pathname.startsWith("/profile")
   const isFriends = pathname.startsWith("/friends")
   const isMobileDetailView = isChatWithUsername || isProfile || isFriends

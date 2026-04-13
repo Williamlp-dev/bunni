@@ -101,7 +101,7 @@ export function useChatPage(username: string) {
   const sendMessageMutation = useSendMessage()
   const audioUpload = useAudioUpload()
   const imageUpload = useImageUpload()
-  const { subscribe, sendTypingStart, sendTypingStop, sendMessageRead, typingUsers } = useWebSocket(currentUserId, { activeConversationId: conversationId || null })
+  const { subscribe, sendTypingStart, sendTypingStop, sendMessageRead, typingUsers } = useWebSocket(currentUserId)
   const { selectedMessages, isSelectionMode, selectMessage, toggleMessage, clearSelection, copySelectedContent } = useMessageSelection()
 
   const blockStatusQuery = useBlockStatus(targetUser?.id ?? "")

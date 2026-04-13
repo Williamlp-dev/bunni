@@ -10,11 +10,7 @@ type TypingTimeouts = Record<string, ReturnType<typeof setTimeout> | null>
 const TYPING_THROTTLE_MS = 2000
 const TYPING_TIMEOUT_MS = 3000
 
-type UseWebSocketOptions = {
-  activeConversationId?: string | null
-}
-
-export function useWebSocket(userId: string, options?: UseWebSocketOptions): {
+export function useWebSocket(userId: string): {
   subscribe: (conversationId: string) => void
   sendTypingStart: (conversationId: string) => void
   sendTypingStop: (conversationId: string) => void
@@ -26,74 +22,11 @@ export function useWebSocket(userId: string, options?: UseWebSocketOptions): {
   const typingTimeoutsRef = useRef<TypingTimeouts>({})
   const lastTypingSentRef = useRef<{ [conversationId: string]: number }>({})
   const userIdRef = useRef<string>(userId)
-  const activeConversationIdRef = useRef<string | null | undefined>(options?.activeConversationId)
 
   userIdRef.current = userId
-  activeConversationIdRef.current = options?.activeConversationId
 
   useEffect(() => {
     wsClient.acquire()
-
-    const unsubscribeMessage = wsClient.on("message:new", (data) => {
-      if (data.senderId === userIdRef.current) {
-        return
-      }
-
-      const newMessage: Message = {
-        id: data.id,
-        conversationId: data.conversationId,
-        senderId: data.senderId,
-        sender: {
-          id: data.sender.id,
-          name: data.sender.name ?? "",
-          displayUsername: data.sender.displayUsername,
-          username: data.sender.displayUsername,
-          image: data.sender.image,
-        },
-        content: data.content,
-        type: data.type,
-        audioUrl: data.audioUrl ?? null,
-        audioDuration: data.audioDuration ?? null,
-        imageUrl: data.imageUrl ?? null,
-        createdAt: new Date(data.createdAt),
-        deletedAt: null,
-        replyTo: data.replyTo
-          ? {
-            id: data.replyTo.id,
-            content: data.replyTo.content,
-            sender: { ...data.replyTo.sender },
-            createdAt: new Date(data.replyTo.createdAt),
-            deletedAt: data.replyTo.deletedAt ? new Date(data.replyTo.deletedAt) : null,
-          } as any
-          : null,
-      }
-
-      queryClient.setQueryData<InfiniteMessagesData>(
-        messagesKeys.list(data.conversationId),
-        (old) => {
-          if (!old?.pages?.length) return old
-
-          const lastPageIndex = old.pages.length - 1
-          const lastPage = old.pages[lastPageIndex]
-
-          const exists = lastPage.messages.some((m: Message) => m.id === newMessage.id)
-          if (exists) return old
-
-          return {
-            ...old,
-            pages: old.pages.map((page, i) =>
-              i === lastPageIndex
-                ? { ...page, messages: [...page.messages, newMessage] }
-                : page
-            ),
-          }
-        }
-      )
-
-      if (data.conversationId === activeConversationIdRef.current) {
-        wsClient.sendMessageRead(data.conversationId)
-      }
-    })
 
     const unsubscribeDelivered = wsClient.on("message:delivered", (data) => {
       queryClient.setQueryData<InfiniteMessagesData>(
@@ -214,7 +147,6 @@ export function useWebSocket(userId: string, options?: UseWebSocketOptions): {
     const unsubscribeUnblocked = wsClient.on("conversation:unblocked", invalidateUsers)
 
     return () => {
-      unsubscribeMessage()
       unsubscribeDelivered()
       unsubscribeRead()
       unsubscribeMessageDeleted()

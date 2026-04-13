@@ -1,30 +1,12 @@
 import { useEffect, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { useRouterState } from "@tanstack/react-router"
 import { wsClient } from "@/lib/websocket-client"
 import { friendsKeys } from "@/modules/friends/hooks/use-friends"
 import { conversationsKeys } from "@/modules/chat/hooks/use-conversations"
-import type { ConversationsList, Participant } from "@/lib/eden-types"
+import { messagesKeys, type InfiniteMessagesData } from "@/modules/chat/hooks/use-messages"
+import type { ConversationsList, Message } from "@/lib/eden-types"
 
 type ConversationEntry = ConversationsList["conversations"][number]
-
-function resolveActiveConversationId(
-  conversations: ConversationEntry[],
-  activeUsername: string | undefined,
-  currentUserId: string
-): string | undefined {
-  if (!activeUsername) return undefined
-
-  const found = conversations.find((conv) =>
-    conv.participants.some(
-      (p: Participant) =>
-        p.id !== currentUserId &&
-        (p.username === activeUsername || p.displayUsername === activeUsername)
-    )
-  )
-
-  return found?.id
-}
 
 type MessageNewData = {
   id: string
@@ -32,7 +14,89 @@ type MessageNewData = {
   senderId: string
   content: string
   type: string
+  audioUrl: string | null
+  audioDuration: number | null
+  imageUrl: string | null
   createdAt: string
+  sender: {
+    id: string
+    name: string | null
+    displayUsername: string
+    image: string | null
+  }
+  replyTo?: {
+    id: string
+    content: string
+    senderId: string
+    sender: {
+      id: string
+      name: string | null
+      displayUsername: string
+      image: string | null
+    }
+    deletedAt: string | null
+    createdAt: string
+  }
+}
+
+function buildMessageFromEvent(data: MessageNewData): Message {
+  return {
+    id: data.id,
+    conversationId: data.conversationId,
+    senderId: data.senderId,
+    sender: {
+      id: data.sender.id,
+      name: data.sender.name ?? "",
+      displayUsername: data.sender.displayUsername,
+      username: data.sender.displayUsername,
+      image: data.sender.image,
+    },
+    content: data.content,
+    type: data.type,
+    audioUrl: data.audioUrl ?? null,
+    audioDuration: data.audioDuration ?? null,
+    imageUrl: data.imageUrl ?? null,
+    createdAt: new Date(data.createdAt),
+    deletedAt: null,
+    replyTo: data.replyTo
+      ? {
+          id: data.replyTo.id,
+          content: data.replyTo.content,
+          sender: { ...data.replyTo.sender },
+          createdAt: new Date(data.replyTo.createdAt),
+          deletedAt: data.replyTo.deletedAt ? new Date(data.replyTo.deletedAt) : null,
+        } as any
+      : null,
+  }
+}
+
+function injectMessageIntoCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  data: MessageNewData
+): void {
+  queryClient.setQueryData<InfiniteMessagesData>(
+    messagesKeys.list(data.conversationId),
+    (old) => {
+      if (!old?.pages?.length) return old
+
+      const lastPageIndex = old.pages.length - 1
+      const lastPage = old.pages[lastPageIndex]
+
+      const exists = lastPage.messages.some((m: Message) => m.id === data.id)
+      if (exists) return old
+
+      const newMessage = buildMessageFromEvent(data)
+
+      return {
+        ...old,
+        pages: old.pages.map((page, i) =>
+          i === lastPageIndex
+            ? { ...page, messages: [...page.messages, newMessage] }
+            : page
+        ),
+      }
+    }
+  )
 }
 
 function updateSidebarOnNewMessage(
@@ -47,13 +111,9 @@ function updateSidebarOnNewMessage(
     return old
   }
 
-  const resolvedActiveId = resolveActiveConversationId(
-    old.conversations,
-    activeConversationId,
-    currentUserId
+  const index = old.conversations.findIndex(
+    (c: ConversationEntry) => c.id === data.conversationId
   )
-
-  const index = old.conversations.findIndex((c: ConversationEntry) => c.id === data.conversationId)
   if (index === -1) {
     invalidate()
     return old
@@ -61,7 +121,7 @@ function updateSidebarOnNewMessage(
 
   const conv = old.conversations[index]
   const isSenderCurrent = data.senderId === currentUserId
-  const isActive = data.conversationId === resolvedActiveId
+  const isActive = data.conversationId === activeConversationId
 
   const updatedConv: ConversationEntry = {
     ...conv,
@@ -79,7 +139,9 @@ function updateSidebarOnNewMessage(
         : conv.unreadCount,
   }
 
-  const others = old.conversations.filter((c: ConversationEntry) => c.id !== data.conversationId)
+  const others = old.conversations.filter(
+    (c: ConversationEntry) => c.id !== data.conversationId
+  )
   const sorted = [updatedConv, ...others].sort((a, b) => {
     const aDate = a.lastMessage
       ? new Date(a.lastMessage.createdAt).getTime()
@@ -93,22 +155,22 @@ function updateSidebarOnNewMessage(
   return { conversations: sorted }
 }
 
-export function useGlobalWsEvents(currentUserId: string): void {
+type GlobalWsState = {
+  currentUserId: string
+  activeConversationId: string | undefined
+}
+
+export function useGlobalWsEvents(
+  currentUserId: string,
+  activeConversationId: string | undefined
+): void {
   const queryClient = useQueryClient()
-  const { pathname } = useRouterState({
-    select: (s) => ({ pathname: s.location.pathname }),
-  })
 
   const queryClientRef = useRef(queryClient)
   queryClientRef.current = queryClient
 
-  const activeUsername =
-    pathname.startsWith("/chat/") && pathname !== "/chat/" && pathname !== "/chat"
-      ? pathname.split("/").pop()
-      : undefined
-
-  const stateRef = useRef({ currentUserId, activeUsername })
-  stateRef.current = { currentUserId, activeUsername }
+  const stateRef = useRef<GlobalWsState>({ currentUserId, activeConversationId })
+  stateRef.current = { currentUserId, activeConversationId }
 
   useEffect(() => {
     wsClient.acquire()
@@ -128,15 +190,26 @@ export function useGlobalWsEvents(currentUserId: string): void {
     })
 
     const unsubMessageNew = wsClient.on("message:new", (data) => {
-      queryClientRef.current.setQueryData(
+      const { currentUserId: uid, activeConversationId: activeId } = stateRef.current
+      const qc = queryClientRef.current
+
+      if (data.senderId !== uid) {
+        injectMessageIntoCache(qc, data)
+
+        if (data.conversationId === activeId) {
+          wsClient.sendMessageRead(data.conversationId)
+        }
+      }
+
+      qc.setQueryData(
         conversationsKeys.list(),
         (old: ConversationsList | undefined) =>
           updateSidebarOnNewMessage(
             old,
             data,
-            stateRef.current.currentUserId,
-            stateRef.current.activeUsername,
-            () => queryClientRef.current.invalidateQueries({ queryKey: conversationsKeys.list() })
+            uid,
+            activeId,
+            () => qc.invalidateQueries({ queryKey: conversationsKeys.list() })
           )
       )
     })
