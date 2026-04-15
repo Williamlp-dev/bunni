@@ -61,6 +61,7 @@ export const messagesRoutes = new Elysia({ prefix: "/messages" })
         audioDuration: message.audioDuration,
         imageUrl: message.imageUrl,
         createdAt: message.createdAt.toISOString(),
+        status: message.status,
         sender: message.sender,
         replyTo: message.replyTo,
       }

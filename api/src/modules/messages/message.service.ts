@@ -11,7 +11,7 @@ import { MessageServiceError } from "@/shared/errors/message.errors"
 import { isBlocked } from "@/shared/helpers/relationship.helpers"
 import { deleteFromR2 } from "@/modules/uploads/upload.service"
 import { env } from "@/env"
-import { isUserOnline, isUserSubscribedToConversation, sendToUser } from "@/modules/websocket/connection-manager"
+import { isUserOnline, sendToUser } from "@/modules/websocket/connection-manager"
 
 
 
@@ -414,15 +414,8 @@ export async function sendMessage(
 
   const recipientId = otherParticipants[0]
   const isRecipientOnline = recipientId ? isUserOnline(recipientId) : false
-  const isRecipientInChat = recipientId
-    ? isUserSubscribedToConversation(recipientId, conversationId)
-    : false
 
-  const messageStatus: "sent" | "delivered" | "read" = isRecipientInChat
-    ? "read"
-    : isRecipientOnline
-      ? "delivered"
-      : "sent"
+  const messageStatus: "sent" | "delivered" | "read" = isRecipientOnline ? "delivered" : "sent"
 
   const messageValues = {
     id: options?.id,
@@ -453,9 +446,7 @@ export async function sendMessage(
     .set({ updatedAt: new Date() })
     .where(eq(conversations.id, conversationId))
 
-  if (isRecipientInChat) {
-    sendToUser(senderId, "message:read", { conversationId, readBy: recipientId! })
-  } else if (isRecipientOnline) {
+  if (isRecipientOnline) {
     sendToUser(senderId, "message:delivered", { conversationId })
   }
 
