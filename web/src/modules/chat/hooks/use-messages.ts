@@ -6,15 +6,8 @@ import {
 } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { conversationsKeys } from "@/modules/chat/hooks/use-conversations"
+import { resolveStatus, sortConversationsByActivity } from "@/modules/chat/utils/message-status"
 import type { Message, MessagesResponse, ConversationsList } from "@/lib/eden-types"
-
-const STATUS_PRIORITY: Record<string, number> = {
-  error: 0,
-  sending: 0,
-  sent: 1,
-  delivered: 2,
-  read: 3,
-}
 
 export type InfiniteMessagesData = {
   pages: MessagesResponse[]
@@ -127,6 +120,10 @@ export function useSendMessage() {
         messagesKeys.list(variables.conversationId)
       )
 
+      const previousSidebarData = queryClient.getQueryData<ConversationsList>(
+        conversationsKeys.list()
+      )
+
       if (variables.optimisticMessage) {
         queryClient.setQueryData<InfiniteMessagesData>(
           messagesKeys.list(variables.conversationId),
@@ -151,33 +148,27 @@ export function useSendMessage() {
           (old: ConversationsList | undefined) => {
             if (!old?.conversations) return old
             type ConvItem = ConversationsList["conversations"][number]
-            return {
-              conversations: old.conversations
-                .map((conv: ConvItem) => {
-                  if (conv.id !== variables.conversationId) return conv
-                  return {
-                    ...conv,
-                    updatedAt: now,
-                    lastMessage: {
-                      id: optMsg.id,
-                      content: optMsg.content,
-                      type: optMsg.type as "text" | "audio" | "image",
-                      senderId: optMsg.senderId,
-                      createdAt: now,
-                    },
-                  }
-                })
-                .sort((a: ConvItem, b: ConvItem) => {
-                  const aDate = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : new Date(a.updatedAt).getTime()
-                  const bDate = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : new Date(b.updatedAt).getTime()
-                  return bDate - aDate
-                }),
-            }
+            const updated = old.conversations.map((conv: ConvItem) => {
+              if (conv.id !== variables.conversationId) return conv
+              return {
+                ...conv,
+                updatedAt: now,
+                lastMessage: {
+                  id: optMsg.id,
+                  content: optMsg.content,
+                  type: optMsg.type as "text" | "audio" | "image",
+                  senderId: optMsg.senderId,
+                  createdAt: now,
+                  status: "sending" as const,
+                },
+              }
+            })
+            return { conversations: sortConversationsByActivity(updated) }
           }
         )
       }
 
-      return { previousData }
+      return { previousData, previousSidebarData }
     },
     onSuccess: (realMessage, variables) => {
       if (!realMessage) return
@@ -197,11 +188,9 @@ export function useSendMessage() {
           const updatedMessages = alreadyExists
             ? lastPage.messages.map((m: Message) => {
                 if (m.id !== realMessage.id) return m
-                const cachedPriority = STATUS_PRIORITY[m.status as string] ?? 0
-                const serverPriority = STATUS_PRIORITY[realMessage.status as string] ?? 0
                 return {
                   ...realMessage,
-                  status: cachedPriority > serverPriority ? m.status : realMessage.status,
+                  status: resolveStatus(m.status as string, realMessage.status as string),
                 }
               })
             : [...lastPage.messages, realMessage]
@@ -222,28 +211,28 @@ export function useSendMessage() {
         (old: ConversationsList | undefined) => {
           if (!old?.conversations) return old
           type ConvItem = ConversationsList["conversations"][number]
-          return {
-            conversations: old.conversations
-              .map((conv: ConvItem) => {
-                if (conv.id !== variables.conversationId) return conv
-                return {
-                  ...conv,
-                  updatedAt: realMessage.createdAt,
-                  lastMessage: {
-                    id: realMessage.id,
-                    content: realMessage.content,
-                    type: realMessage.type as "text" | "audio" | "image",
-                    senderId: realMessage.senderId,
-                    createdAt: realMessage.createdAt,
-                  },
-                }
-              })
-              .sort((a: ConvItem, b: ConvItem) => {
-                const aDate = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : new Date(a.updatedAt).getTime()
-                const bDate = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : new Date(b.updatedAt).getTime()
-                return bDate - aDate
-              }),
-          }
+          const updated = old.conversations.map((conv: ConvItem) => {
+            if (conv.id !== variables.conversationId) return conv
+
+            const cachedStatus =
+              conv.lastMessage?.id === realMessage.id
+                ? (conv.lastMessage.status as string)
+                : undefined
+
+            return {
+              ...conv,
+              updatedAt: realMessage.createdAt,
+              lastMessage: {
+                id: realMessage.id,
+                content: realMessage.content,
+                type: realMessage.type as "text" | "audio" | "image",
+                senderId: realMessage.senderId,
+                createdAt: realMessage.createdAt,
+                status: resolveStatus(cachedStatus, realMessage.status as string),
+              },
+            }
+          })
+          return { conversations: sortConversationsByActivity(updated) }
         }
       )
     },
@@ -252,6 +241,12 @@ export function useSendMessage() {
         queryClient.setQueryData(
           messagesKeys.list(variables.conversationId),
           context.previousData
+        )
+      }
+      if (context?.previousSidebarData) {
+        queryClient.setQueryData(
+          conversationsKeys.list(),
+          context.previousSidebarData
         )
       }
     },

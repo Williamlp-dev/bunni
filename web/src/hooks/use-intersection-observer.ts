@@ -16,11 +16,10 @@ export function useIntersectionObserver({
   threshold = 0,
 }: UseIntersectionObserverProps) {
   const targetRef = useRef<HTMLDivElement>(null)
-  
-  // Usamos ref para previnir re-renders se quisermos acessar onIntersect atualizado,
-  // mas aqui manter dependências limpas.
+
+
   const onIntersectRef = useRef(onIntersect)
-  
+
   useEffect(() => {
     onIntersectRef.current = onIntersect
   }, [onIntersect])

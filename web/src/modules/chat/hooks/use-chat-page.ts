@@ -9,10 +9,10 @@ import { useAudioUpload } from "@/modules/chat/hooks/use-audio-upload"
 import { useImageUpload } from "@/modules/chat/hooks/use-image-upload"
 import { useBlockStatus } from "@/modules/profile/hooks/use-block-user"
 import { conversationsKeys } from "@/modules/chat/hooks/use-conversations"
+import { useChatStore } from "@/modules/chat/store/chat-store"
 import type { Message, Participant } from "@/lib/eden-types"
 import { useQueryClient, type QueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { wsClient } from "@/lib/websocket-client"
 
 type SessionUser = {
   id: string
@@ -101,7 +101,9 @@ export function useChatPage(username: string) {
   const sendMessageMutation = useSendMessage()
   const audioUpload = useAudioUpload()
   const imageUpload = useImageUpload()
-  const { subscribe, sendTypingStart, sendTypingStop, sendMessageRead, typingUsers } = useWebSocket(currentUserId)
+  const { sendTypingStart, sendTypingStop, sendMessageRead } = useWebSocket()
+  const typingUserId = useChatStore((s) => s.typingUsers[conversationId] ?? null)
+  const setActiveConversationId = useChatStore((s) => s.setActiveConversationId)
   const { selectedMessages, isSelectionMode, selectMessage, toggleMessage, clearSelection, copySelectedContent } = useMessageSelection()
 
   const blockStatusQuery = useBlockStatus(targetUser?.id ?? "")
@@ -112,7 +114,6 @@ export function useChatPage(username: string) {
   const queryClient = useQueryClient()
   const messages = flattenMessages(messagesData)
 
-  const typingUserId = conversationId ? (typingUsers[conversationId] ?? null) : null
   const isTyping = typingUserId !== null && typingUserId !== currentUserId
 
   const [replyingTo, setReplyingTo] = useState<Message | null>(null)
@@ -146,8 +147,8 @@ export function useChatPage(username: string) {
 
   useEffect(() => {
     if (!conversationId) return
-    subscribe(conversationId)
     sendMessageRead(conversationId)
+    setActiveConversationId(conversationId)
 
     queryClient.setQueryData<{ conversations: Array<{ id: string; unreadCount: number }> }>(
       conversationsKeys.list(),
@@ -163,9 +164,9 @@ export function useChatPage(username: string) {
     )
 
     return () => {
-      wsClient.unsubscribe(conversationId)
+      setActiveConversationId(undefined)
     }
-  }, [conversationId, subscribe, sendMessageRead, queryClient])
+  }, [conversationId, sendMessageRead, queryClient, setActiveConversationId])
 
   const handleDeleteRequest = (msgs: Message[]) => {
     setDeleteTargetMessages(msgs)
