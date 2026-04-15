@@ -253,6 +253,7 @@
   --animate-audio-wave:          audio-wave 1.2s ease-in-out infinite alternate;
   --animate-pulse-ring:          pulse-ring 2s infinite;
   --animate-friend-card-in:      friend-card-in 220ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  --animate-conversation-preview-in: conversation-preview-in 150ms cubic-bezier(0.32, 0.72, 0, 1) both;
 
   /* Navegação */
   --animate-page-slide-from-right: page-slide-from-right 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
@@ -362,6 +363,11 @@
   @keyframes friend-card-in {
     from { opacity: 0; transform: scale(0.97) translateY(6px); }
     to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  @keyframes conversation-preview-in {
+    from { opacity: 0; filter: blur(4px); transform: translateY(3px); }
+    to   { opacity: 1; filter: blur(0px); transform: translateY(0); }
   }
 
   @keyframes page-slide-from-right {

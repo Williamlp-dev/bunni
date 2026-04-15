@@ -17,7 +17,6 @@ export function TypingIndicator({
   const prevMessageIdRef = useRef(lastMessageId)
 
   useEffect(() => {
-    let showDelayTimer: ReturnType<typeof setTimeout>
     let hideDelayTimer: ReturnType<typeof setTimeout>
 
     const messageJustArrived = prevMessageIdRef.current !== lastMessageId
@@ -25,7 +24,7 @@ export function TypingIndicator({
 
     if (isTyping) {
       setShouldRender(true)
-      showDelayTimer = setTimeout(() => setShow(true), 10)
+      setShow(true)
     } else {
       setShow(false)
       
@@ -37,7 +36,6 @@ export function TypingIndicator({
     }
 
     return () => {
-      clearTimeout(showDelayTimer)
       clearTimeout(hideDelayTimer)
     }
   }, [isTyping, lastMessageId])
