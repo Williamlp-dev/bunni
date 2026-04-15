@@ -7,6 +7,7 @@ export const LastMessageSchema = t.Object({
   type: t.Union([t.Literal("text"), t.Literal("audio"), t.Literal("image")]),
   senderId: t.String({ format: "uuid" }),
   createdAt: t.Date(),
+  status: t.Union([t.Literal("sent"), t.Literal("delivered"), t.Literal("read")]),
 })
 
 export type LastMessage = Static<typeof LastMessageSchema>

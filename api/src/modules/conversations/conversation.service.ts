@@ -242,6 +242,7 @@ export async function getUserConversations(
       senderId: string
       createdAt: Date
       deletedAt: Date | null
+      status: "sent" | "delivered" | "read"
     }>(sql`
       SELECT DISTINCT ON (conversation_id)
         conversation_id AS "conversationId",
@@ -250,7 +251,8 @@ export async function getUserConversations(
         type,
         sender_id AS "senderId",
         created_at AS "createdAt",
-        deleted_at AS "deletedAt"
+        deleted_at AS "deletedAt",
+        status
       FROM messages
       WHERE conversation_id = ANY(ARRAY[${sql.join(conversationIds.map(id => sql`${id}`), sql`, `)}]::text[])
       ORDER BY conversation_id, created_at DESC
@@ -315,6 +317,7 @@ export async function getUserConversations(
         type: rawLastMsg.type as LastMessage["type"],
         senderId: rawLastMsg.senderId,
         createdAt: rawLastMsg.createdAt,
+        status: rawLastMsg.status ?? "sent",
       }
     }
 
