@@ -22,7 +22,7 @@ type WebSocketEventType =
   | "error"
   | "disconnected"
 
-type WebSocketEventData = {
+export type WebSocketEventData = {
   connected: { userId: string }
   "message:new": {
     id: string
@@ -34,6 +34,7 @@ type WebSocketEventData = {
     audioDuration: number | null
     imageUrl: string | null
     createdAt: string
+    status: "sent" | "delivered" | "read"
     sender: {
       id: string
       name: string | null
@@ -128,15 +129,10 @@ class WebSocketClient {
   private isManualDisconnect = false
   private subscribedConversations: Set<string> = new Set()
 
-  // Ref counting
   private activeConsumers = 0
   private disconnectTimeout: ReturnType<typeof setTimeout> | null = null
   private pingInterval: ReturnType<typeof setInterval> | null = null
 
-  /**
-   * Acquires a connection usage lock.
-   * If there are no active consumers, it connects.
-   */
   acquire(): void {
     if (this.disconnectTimeout) {
       clearTimeout(this.disconnectTimeout)
@@ -154,10 +150,6 @@ class WebSocketClient {
     }
   }
 
-  /**
-   * Releases a connection usage lock.
-   * If active consumers drop to 0, it schedules a disconnection.
-   */
   release(): void {
     this.activeConsumers--
 

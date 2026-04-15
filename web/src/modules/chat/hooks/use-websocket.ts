@@ -1,178 +1,21 @@
-import { useEffect, useCallback, useState, useRef } from "react"
-import { useQueryClient } from "@tanstack/react-query"
+import { useCallback, useRef } from "react"
 import { wsClient } from "@/lib/websocket-client"
-import { messagesKeys, type InfiniteMessagesData } from "@/modules/chat/hooks/use-messages"
-import type { Message, MessageStatusType } from "@/lib/eden-types"
+import { TYPING_THROTTLE_MS } from "@/modules/chat/utils/message-status"
 
-type TypingUsers = Record<string, string | null>
-type TypingTimeouts = Record<string, ReturnType<typeof setTimeout> | null>
-
-const TYPING_THROTTLE_MS = 2000
-const TYPING_TIMEOUT_MS = 3000
-
-export function useWebSocket(userId: string): {
-  subscribe: (conversationId: string) => void
+type UseWebSocketReturn = {
   sendTypingStart: (conversationId: string) => void
   sendTypingStop: (conversationId: string) => void
   sendMessageRead: (conversationId: string) => void
-  typingUsers: TypingUsers
-} {
-  const queryClient = useQueryClient()
-  const [typingUsers, setTypingUsers] = useState<TypingUsers>({})
-  const typingTimeoutsRef = useRef<TypingTimeouts>({})
-  const lastTypingSentRef = useRef<{ [conversationId: string]: number }>({})
-  const userIdRef = useRef<string>(userId)
+}
 
-  userIdRef.current = userId
-
-  useEffect(() => {
-    wsClient.acquire()
-
-    const unsubscribeDelivered = wsClient.on("message:delivered", (data) => {
-      queryClient.setQueryData<InfiniteMessagesData>(
-        messagesKeys.list(data.conversationId),
-        (old) => {
-          if (!old?.pages) return old
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              messages: page.messages.map((m: Message) => {
-                if (m.senderId === userIdRef.current && (m.status as MessageStatusType) === "sent") {
-                  return { ...m, status: "delivered" }
-                }
-                return m
-              }),
-            })),
-          }
-        }
-      )
-    })
-
-    const unsubscribeRead = wsClient.on("message:read", (data) => {
-      queryClient.setQueryData<InfiniteMessagesData>(
-        messagesKeys.list(data.conversationId),
-        (old) => {
-          if (!old?.pages) return old
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              messages: page.messages.map((m: Message) => {
-                const status = m.status as MessageStatusType
-                if (
-                  m.senderId === userIdRef.current &&
-                  (status === "delivered" || status === "sent" || status === "sending")
-                ) {
-                  return { ...m, status: "read" }
-                }
-                return m
-              }),
-            })),
-          }
-        }
-      )
-    })
-
-    const unsubscribeMessageDeleted = wsClient.on("message:deleted", (data) => {
-      queryClient.setQueryData<InfiniteMessagesData>(
-        messagesKeys.list(data.conversationId),
-        (old) => {
-          if (!old?.pages) return old
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              messages: page.messages.map((m: Message) => {
-                if (m.id === data.id) {
-                  return {
-                    ...m,
-                    deletedAt: new Date(),
-                    content: "Mensagem apagada",
-                  }
-                }
-                if (m.replyTo?.id === data.id) {
-                  return {
-                    ...m,
-                    replyTo: {
-                      ...m.replyTo,
-                      deletedAt: new Date().toISOString(),
-                      content: "Mensagem apagada",
-                    },
-                  }
-                }
-                return m
-              }),
-            })),
-          }
-        }
-      )
-    })
-
-    const unsubscribeTypingStart = wsClient.on("typing:start", (data) => {
-      const existingTimeout = typingTimeoutsRef.current[data.conversationId]
-      if (existingTimeout) {
-        clearTimeout(existingTimeout)
-      }
-
-      setTypingUsers((prev) => ({
-        ...prev,
-        [data.conversationId]: data.userId,
-      }))
-
-      typingTimeoutsRef.current[data.conversationId] = setTimeout(() => {
-        setTypingUsers((prev) => ({
-          ...prev,
-          [data.conversationId]: null,
-        }))
-        typingTimeoutsRef.current[data.conversationId] = null
-      }, TYPING_TIMEOUT_MS)
-    })
-
-    const unsubscribeTypingStop = wsClient.on("typing:stop", (data) => {
-      const existingTimeout = typingTimeoutsRef.current[data.conversationId]
-      if (existingTimeout) {
-        clearTimeout(existingTimeout)
-        typingTimeoutsRef.current[data.conversationId] = null
-      }
-
-      setTypingUsers((prev) => ({
-        ...prev,
-        [data.conversationId]: null,
-      }))
-    })
-
-    const invalidateUsers = () => queryClient.invalidateQueries({ queryKey: ["users"] })
-    const unsubscribeBlocked = wsClient.on("conversation:blocked", invalidateUsers)
-    const unsubscribeUnblocked = wsClient.on("conversation:unblocked", invalidateUsers)
-
-    return () => {
-      unsubscribeDelivered()
-      unsubscribeRead()
-      unsubscribeMessageDeleted()
-      unsubscribeTypingStart()
-      unsubscribeTypingStop()
-      unsubscribeBlocked()
-      unsubscribeUnblocked()
-      wsClient.release()
-
-      Object.values(typingTimeoutsRef.current).forEach((timeout) => {
-        if (timeout) clearTimeout(timeout)
-      })
-    }
-  }, [queryClient])
-
-  const subscribe = useCallback((conversationId: string) => {
-    wsClient.subscribe(conversationId)
-  }, [])
+export function useWebSocket(): UseWebSocketReturn {
+  const lastTypingSentRef = useRef<Record<string, number>>({})
 
   const sendTypingStart = useCallback((conversationId: string) => {
     const now = Date.now()
     const lastSent = lastTypingSentRef.current[conversationId] ?? 0
 
-    if (now - lastSent < TYPING_THROTTLE_MS) {
-      return
-    }
+    if (now - lastSent < TYPING_THROTTLE_MS) return
 
     lastTypingSentRef.current[conversationId] = now
     wsClient.sendTypingStart(conversationId)
@@ -187,11 +30,5 @@ export function useWebSocket(userId: string): {
     wsClient.sendMessageRead(conversationId)
   }, [])
 
-  return {
-    subscribe,
-    sendTypingStart,
-    sendTypingStop,
-    sendMessageRead,
-    typingUsers,
-  }
+  return { sendTypingStart, sendTypingStop, sendMessageRead }
 }
