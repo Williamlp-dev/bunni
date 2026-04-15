@@ -12,7 +12,7 @@ const InputRoot = React.forwardRef<HTMLDivElement, InputRootProps>(
       ref={ref}
       data-error={error}
       className={cn(
-        "group flex h-14 items-center gap-4 rounded-md border border-input bg-background px-4 focus-within:border-primary focus-within:ring-1 focus-within:ring-ring data-[error=true]:border-destructive",
+        "group flex h-14 items-center gap-4 rounded-xl border border-input bg-background px-4 focus-within:border-primary focus-within:ring-2 focus-within:ring-ring data-[error=true]:border-destructive",
         className
       )}
       {...props}

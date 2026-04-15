@@ -16,7 +16,7 @@ export function SearchInput({ onSearch, onChange, className, ...props }: SearchI
   return (
     <InputRoot
       className={cn(
-        "h-12 rounded-md bg-muted hover:bg-accent focus-within:bg-background",
+        "h-10 rounded-full border-transparent bg-muted hover:bg-muted/80 focus-within:bg-background focus-within:border-input",
         className
       )}
     >
