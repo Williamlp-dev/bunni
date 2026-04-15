@@ -1,33 +1,51 @@
-import { CheckCheck } from "lucide-react"
+import { memo } from "react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { OnlineStatusIndicator } from "@/components/ui/online-status-indicator"
+import { MessageStatus } from "@/modules/chat/components/message-status"
+import type { MessageStatusType } from "@/lib/eden-types"
 
 type ConversationItemProps = {
   name: string
   lastMessage?: string
+  lastMessageType?: "text" | "audio" | "image"
+  lastMessageSenderId?: string
+  currentUserId?: string
+  messageStatus?: MessageStatusType
   timestamp: string
   avatarSrc?: string
   unreadCount?: number
-  isRead?: boolean
-  isOnline?: boolean
+  isTyping?: boolean
   state?: "default" | "active" | "unread"
   onClick?: () => void
   className?: string
 }
 
-export function ConversationItem({
+function ConversationItemInner({
   name,
   lastMessage,
+  lastMessageType,
+  lastMessageSenderId,
+  currentUserId,
+  messageStatus,
   timestamp,
   avatarSrc,
   unreadCount,
-  isRead,
-  isOnline,
+  isTyping = false,
   state = "default",
   onClick,
   className,
 }: ConversationItemProps): React.ReactElement {
+  const isMine = lastMessageSenderId === currentUserId
+  const hasUnread = (unreadCount ?? 0) > 0
+
+  const previewText = (): string => {
+    if (lastMessageType === "image") return "📷 Foto"
+    if (lastMessageType === "audio") return "🎤 Áudio"
+    return lastMessage ?? ""
+  }
+
+  const preview = previewText()
+
   return (
     <button
       type="button"
@@ -46,28 +64,17 @@ export function ConversationItem({
         className
       )}
     >
-      <div className="relative shrink-0">
-        <Avatar className="size-10">
-          <AvatarImage src={avatarSrc} alt={name} />
-          <AvatarFallback className="bg-primary/10 text-primary">{name.slice(0, 2).toUpperCase()}</AvatarFallback>
-        </Avatar>
-        {isOnline !== undefined && (
-          <div className="absolute -bottom-0.5 -right-0.5">
-            <OnlineStatusIndicator
-              status={isOnline ? "online" : "offline"}
-              size="sm"
-            />
-          </div>
-        )}
-      </div>
+      <Avatar className="size-10 shrink-0">
+        <AvatarImage src={avatarSrc} alt={name} />
+        <AvatarFallback className="bg-primary/10 text-primary">{name.slice(0, 2).toUpperCase()}</AvatarFallback>
+      </Avatar>
 
-      <div className="flex-1 min-w-0 flex flex-col gap-1">
+      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
         <div className="flex items-baseline justify-between gap-2">
           <span
             className={cn(
               "truncate font-semibold text-sm tracking-tight",
               state === "active" ? "text-primary" : "text-foreground",
-              state === "unread" && "text-foreground"
             )}
           >
             {name}
@@ -77,34 +84,42 @@ export function ConversationItem({
           </span>
         </div>
 
-        {lastMessage && (
-          <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2">
+          {isTyping ? (
             <span
+              key="typing"
+              className="truncate text-xs font-medium text-primary animate-conversation-preview-in"
+            >
+              digitando...
+            </span>
+          ) : (
+            <span
+              key={preview}
               className={cn(
-                "truncate text-xs flex items-center gap-1.5 leading-snug",
+                "truncate text-xs flex items-center gap-1 leading-snug animate-conversation-preview-in",
                 state === "unread"
                   ? "font-semibold text-foreground/90"
                   : "font-normal text-muted-foreground/80"
               )}
             >
-              {isRead !== undefined && (
-                <CheckCheck
-                  className={cn(
-                    "size-3.5 shrink-0",
-                    isRead ? "text-primary" : "text-muted-foreground/40"
-                  )}
-                />
+              {isMine && messageStatus && (
+                <span className="shrink-0">
+                  <MessageStatus status={messageStatus} />
+                </span>
               )}
-              {lastMessage}
+              {preview}
             </span>
-            {unreadCount && unreadCount > 0 && (
-              <span className="flex h-5 min-w-5 shrink-0 items-center justify-center bg-primary px-2 text-xs font-bold text-primary-foreground rounded-full">
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
-            )}
-          </div>
-        )}
+          )}
+
+          {hasUnread && (
+            <span className="flex h-5 min-w-5 shrink-0 items-center justify-center bg-primary px-1.5 text-xs font-bold text-primary-foreground rounded-full">
+              {unreadCount! > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </div>
       </div>
     </button>
   )
 }
+
+export const ConversationItem = memo(ConversationItemInner)

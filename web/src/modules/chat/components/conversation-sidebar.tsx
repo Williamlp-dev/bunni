@@ -5,11 +5,12 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty-state'
 import { ConversationItem } from "./conversation-item"
 import { useSuspenseConversations } from "../hooks/use-conversations"
+import { useChatStore } from "../store/chat-store"
 import { getOtherParticipant, formatTimestamp, formatLastMessagePreview } from "@/modules/chat/utils/chat-utils"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AsyncBoundary } from "@/components/async-boundary"
 import type { User } from "@/modules/auth/types"
-import type { Conversation } from "@/lib/eden-types"
+import type { Conversation, MessageStatusType } from "@/lib/eden-types"
 
 type ConversationSidebarProps = {
   user: User
@@ -43,6 +44,7 @@ function ConversationList({
 }) {
   const navigate = useNavigate()
   const { data: conversationsData } = useSuspenseConversations()
+  const typingUsers = useChatStore((s) => s.typingUsers)
 
   const conversations = conversationsData?.conversations ?? []
 
@@ -57,17 +59,7 @@ function ConversationList({
     )
   })
 
-  const sortedConversations = [...filteredConversations].sort((a, b) => {
-    const aDate = a.lastMessage
-      ? new Date(a.lastMessage.createdAt).getTime()
-      : new Date(a.updatedAt).getTime()
-    const bDate = b.lastMessage
-      ? new Date(b.lastMessage.createdAt).getTime()
-      : new Date(b.updatedAt).getTime()
-    return bDate - aDate
-  })
-
-  if (sortedConversations.length === 0) {
+  if (filteredConversations.length === 0) {
     return (
       <div className="px-4 py-8">
         <Empty>
@@ -82,7 +74,7 @@ function ConversationList({
 
   return (
     <>
-      {sortedConversations.map((conversation) => {
+      {filteredConversations.map((conversation) => {
         const participant = getOtherParticipant(conversation, user.id)
         if (!participant) return null
 
@@ -98,19 +90,22 @@ function ConversationList({
           typeof timestampSource === "string" ? timestampSource : timestampSource.toString()
         )
 
-        const lastMessagePreview = conversation.lastMessage
-          ? formatLastMessagePreview(conversation.lastMessage, user.id)
-          : undefined
-
+        const lastMessage = conversation.lastMessage
+        const isTyping = !!(typingUsers[conversation.id])
 
         return (
           <ConversationItem
             key={conversation.id}
             name={participant.name}
-            lastMessage={lastMessagePreview}
+            lastMessage={lastMessage ? formatLastMessagePreview(lastMessage, user.id) : undefined}
+            lastMessageType={lastMessage?.type as "text" | "audio" | "image" | undefined}
+            lastMessageSenderId={lastMessage?.senderId}
+            currentUserId={user.id}
+            messageStatus={lastMessage?.senderId === user.id ? lastMessage.status as MessageStatusType : undefined}
             timestamp={timestamp}
             avatarSrc={participant.image ?? undefined}
             unreadCount={unreadCount}
+            isTyping={isTyping}
             state={conversationState}
             onClick={() => {
               if (username) {
