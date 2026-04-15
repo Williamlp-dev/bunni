@@ -45,6 +45,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--toast-close-button-end": "0",
           "--toast-close-button-transform": "translate(-35%, -35%) absolute",
           "--offset": "5rem",
+          "zIndex": 49,
         } as React.CSSProperties
       }
       toastOptions={{
