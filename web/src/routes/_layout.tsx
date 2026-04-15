@@ -71,7 +71,7 @@ export default function Layout() {
     pathname.startsWith("/chat/") &&
     pathname !== "/chat/" &&
     pathname !== "/chat"
-  useGlobalWsEvents(session.user.id, isChatWithUsername ? pathname.split("/").pop() : undefined)
+  useGlobalWsEvents(session.user.id)
 
   const isProfile = pathname.startsWith("/profile")
   const isFriends = pathname.startsWith("/friends")
@@ -114,6 +114,7 @@ export default function Layout() {
         : ""
 
   return (
+    <>
     <GlobalAudioProvider>
       <div className="flex h-dvh bg-background overflow-hidden selection:bg-primary selection:text-primary-foreground">
         <div className="relative z-10 flex w-full h-full">
@@ -157,5 +158,6 @@ export default function Layout() {
         {!isChatWithUsername && <MobileBottomNav />}
       </div>
     </GlobalAudioProvider>
+    </>
   )
 }
