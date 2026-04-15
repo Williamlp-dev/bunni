@@ -132,7 +132,8 @@ function ChatWithUserPage() {
       <main className="flex flex-1 flex-col h-full bg-background overflow-hidden">
         <div className="relative">
           <ChatHeader 
-            title={chat.displayName} 
+            title={chat.displayName}
+            targetUserId={chat.targetUser?.id}
             onBack={chat.navigateToChat} 
             onClearChat={chat.handleClearChat}
             onTitleClick={() => setIsProfileOpen(true)}
