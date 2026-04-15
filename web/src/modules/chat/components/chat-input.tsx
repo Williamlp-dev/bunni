@@ -44,11 +44,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
     if (message.trim()) {
       onSend(message.trim())
       setMessage("")
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          inputRef.current?.focus()
-        }, 0)
-      })
+      setTimeout(() => inputRef.current?.focus(), 0)
     }
   }
 
@@ -201,7 +197,6 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
                   onKeyDown={handleKeyDown}
                   placeholder=""
                   disabled={disabled}
-                  autoFocus
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="sentences"
@@ -223,6 +218,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
                 variant="ghost"
                 size="icon"
                 disabled={!message.trim() || disabled}
+                onPointerDown={(e) => e.preventDefault()}
                 className={cn(
                   "absolute inset-0 z-10 rounded-lg transition-all duration-(--duration-fast) ease-out btn-press",
                   message.trim()
