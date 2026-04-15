@@ -87,7 +87,7 @@ export function SignUp(): React.ReactElement {
             <InputField
               type="text"
               placeholder="Usuário (ex: joaosilva)"
-              autoComplete="username"
+              autoComplete="nickname"
               {...register("username")}
             />
           </InputRoot>
