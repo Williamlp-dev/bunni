@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { ChevronLeft, MoreVertical, Eraser } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PageHeader as PageHeaderUI } from "@/components/ui/page-header"
@@ -8,22 +9,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/menu"
 import { ClearChatDialog } from "@/modules/chat/components/clear-chat-dialog"
-import { useState } from "react"
+import { useIsOnline } from "@/modules/chat/hooks/use-presence"
 
 type ChatHeaderProps = {
   title: string
+  targetUserId?: string
   onBack: () => void
   onClearChat: () => void
   onTitleClick?: () => void
 }
 
-export function ChatHeader({ title, onBack, onClearChat, onTitleClick }: ChatHeaderProps) {
+export function ChatHeader({ title, targetUserId, onBack, onClearChat, onTitleClick }: ChatHeaderProps) {
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false)
+  const isOnline = useIsOnline(targetUserId)
 
   return (
     <>
       <PageHeaderUI
         title={title}
+        description={isOnline ? "online" : undefined}
         onTitleClick={onTitleClick}
         startContent={
           <Button
