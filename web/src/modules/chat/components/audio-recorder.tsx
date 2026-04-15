@@ -226,7 +226,7 @@ export function AudioRecorderOverlay({ hideSendButton = false }: AudioRecorderOv
     <div
       data-state={isOpen ? 'open' : 'closed'}
       className={cn(
-        "absolute inset-0 z-10 flex items-center gap-2 rounded-md bg-background px-2 shadow-sm border border-transparent dark:border-input transition-all duration-(--duration-base) ease-snappy origin-[100%_50%]",
+        "absolute inset-0 z-10 flex items-center gap-2 rounded-full bg-background px-2 shadow-sm border border-transparent dark:border-input transition-all duration-(--duration-base) ease-snappy origin-[100%_50%]",
         "data-[state=closed]:opacity-0 data-[state=closed]:scale-75 data-[state=closed]:translate-x-6 data-[state=closed]:pointer-events-none data-[state=closed]:blur-sm",
         "data-[state=open]:opacity-100 data-[state=open]:scale-100 data-[state=open]:translate-x-0 data-[state=open]:blur-0"
       )}
@@ -260,7 +260,7 @@ export function AudioRecorderOverlay({ hideSendButton = false }: AudioRecorderOv
           size="icon"
           className={cn(
             "size-9 shadow-sm btn-press transition-all duration-(--duration-fast) ease-snappy",
-            status === 'recording' ? 'rounded-full bg-secondary text-secondary-foreground' : 'rounded-xl bg-primary/15 text-primary hover:bg-primary/25'
+            status === 'recording' ? 'rounded-full bg-secondary text-secondary-foreground' : 'rounded-full bg-primary/15 text-primary hover:bg-primary/25'
           )}
           onClick={togglePause}
           aria-label={status === 'recording' ? 'Pause recording' : 'Resume recording'}
@@ -331,7 +331,7 @@ export function AudioRecorderTrigger({ disabled, className, onSubmitBehavior = '
       size="icon"
       className={cn(
         'relative btn-press transition-all duration-(--duration-fast) ease-snappy',
-        isActive ? 'rounded-xl bg-primary/15 text-primary scale-90' : 'rounded-full',
+        isActive ? 'rounded-full bg-primary/15 text-primary scale-90' : 'rounded-full',
         className
       )}
       onClick={handleClick}

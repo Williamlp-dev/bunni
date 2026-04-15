@@ -45,7 +45,9 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
       onSend(message.trim())
       setMessage("")
       requestAnimationFrame(() => {
-        inputRef.current?.focus()
+        setTimeout(() => {
+          inputRef.current?.focus()
+        }, 0)
       })
     }
   }
@@ -173,7 +175,7 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
             </div>
 
             <div className="relative flex-1">
-              <InputRoot className="relative">
+              <InputRoot className="relative h-11 rounded-full border-transparent bg-muted hover:bg-muted/80 focus-within:bg-background focus-within:border-input">
                 <div className="pointer-events-none absolute inset-0 flex items-center px-4 overflow-hidden">
                   <span
                     className={cn(
@@ -199,10 +201,15 @@ export function ChatInput({ onSend, onSendAudio, onSendImage, onTyping, disabled
                   onKeyDown={handleKeyDown}
                   placeholder=""
                   disabled={disabled}
-                  autoFocus={!!replyingTo}
+                  autoFocus
                   autoComplete="off"
+                  autoCorrect="off"
                   autoCapitalize="sentences"
+                  spellCheck={false}
                   inputMode="text"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  data-form-type="other"
                   className="text-sm z-10"
                 />
               </InputRoot>
