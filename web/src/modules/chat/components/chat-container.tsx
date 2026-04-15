@@ -1,126 +1,64 @@
-import { useRef, useEffect, useCallback, forwardRef, type RefObject } from "react"
+import { forwardRef, useCallback, useImperativeHandle } from "react"
+import { useStickToBottom } from "use-stick-to-bottom"
 import { cn } from "@/lib/utils"
+import { ChevronDown } from "lucide-react"
 
 export type ChatContainerRootProps = {
   children: React.ReactNode
   className?: string
-} & React.HTMLAttributes<HTMLDivElement>
+} & Omit<React.HTMLAttributes<HTMLDivElement>, "ref">
 
 export type ChatContainerContentProps = {
   children: React.ReactNode
   className?: string
 } & React.HTMLAttributes<HTMLDivElement>
 
-export type ChatContainerScrollAnchorProps = {
-  className?: string
-  ref?: React.RefObject<HTMLDivElement>
-} & React.HTMLAttributes<HTMLDivElement>
-
-function supportsScrollBehavior(): boolean {
-  return "scrollBehavior" in document.documentElement.style
-}
-
-function useStickToBottom(containerRef: RefObject<HTMLDivElement | null>) {
-  const isStuckRef = useRef(true)
-  const isInitialRef = useRef(true)
-  const rafIdRef = useRef<number | null>(null)
-
-  const scrollToBottom = useCallback(
-    (behavior: ScrollBehavior = "smooth") => {
-      const el = containerRef.current
-      if (!el) return
-      isStuckRef.current = true
-      const resolvedBehavior = supportsScrollBehavior() ? behavior : "auto"
-      el.scrollTo({ top: el.scrollHeight, behavior: resolvedBehavior })
-    },
-    [containerRef],
-  )
-
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-
-    if (isInitialRef.current) {
-      el.scrollTo({ top: el.scrollHeight, behavior: "instant" })
-      isInitialRef.current = false
-    }
-
-    const scheduleScroll = (behavior: ScrollBehavior) => {
-      if (!isStuckRef.current) return
-      if (rafIdRef.current !== null) return
-      rafIdRef.current = requestAnimationFrame(() => {
-        rafIdRef.current = null
-        if (!isStuckRef.current) return
-        const container = containerRef.current
-        if (!container) return
-        const resolvedBehavior = supportsScrollBehavior() ? behavior : "auto"
-        container.scrollTo({ top: container.scrollHeight, behavior: resolvedBehavior })
-      })
-    }
-
-    const handleScroll = () => {
-      const distanceFromBottom = el.scrollHeight - Math.ceil(el.scrollTop) - el.clientHeight
-      isStuckRef.current = distanceFromBottom < 150
-    }
-
-    const resizeObserver = new ResizeObserver(() => scheduleScroll("smooth"))
-
-    const mutationObserver = new MutationObserver(() => {
-      scheduleScroll("smooth")
-    })
-
-    mutationObserver.observe(el, { childList: true, subtree: true })
-
-    const content = el.firstElementChild
-    if (content) {
-      resizeObserver.observe(content)
-    }
-
-    el.addEventListener("scroll", handleScroll, { passive: true })
-
-    return () => {
-      if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current)
-        rafIdRef.current = null
-      }
-      el.removeEventListener("scroll", handleScroll)
-      mutationObserver.disconnect()
-      resizeObserver.disconnect()
-    }
-  }, [containerRef])
-
-  return { scrollToBottom }
-}
-
-
 const ChatContainerRoot = forwardRef<HTMLDivElement, ChatContainerRootProps>(
   ({ children, className, ...props }, ref) => {
-    const internalRef = useRef<HTMLDivElement>(null)
+    const { scrollRef, contentRef, isAtBottom, scrollToBottom } = useStickToBottom({
+      resize: "smooth",
+      initial: "instant",
+    })
 
-    
-    // Merge refs
-    const setRef = useCallback((node: HTMLDivElement | null) => {
-      internalRef.current = node
-      if (typeof ref === 'function') {
-        ref(node)
-      } else if (ref) {
-        ref.current = node
-      }
-    }, [ref])
+    useImperativeHandle(ref, () => scrollRef.current as HTMLDivElement, [scrollRef])
 
-    useStickToBottom(internalRef)
+    const handleScrollToBottom = useCallback(() => {
+      scrollToBottom()
+    }, [scrollToBottom])
 
     return (
-      <div
-        ref={setRef}
-        className={cn("flex flex-col overflow-y-auto overflow-x-hidden", className)}
-        role="log"
-        {...props}
-      >
-        {children}
+      <div className="relative flex flex-col flex-1 min-h-0 overflow-hidden">
+        <div
+          ref={scrollRef}
+          role="log"
+          className={cn("flex flex-col overflow-y-auto overflow-x-hidden flex-1", className)}
+          {...props}
+        >
+          <div ref={contentRef} className="flex flex-col">
+            {children}
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            "absolute bottom-4 right-4 z-10 transition-all duration-200",
+            isAtBottom
+              ? "opacity-0 translate-y-2 pointer-events-none"
+              : "opacity-100 translate-y-0 pointer-events-auto",
+          )}
+        >
+          <button
+            type="button"
+            onClick={handleScrollToBottom}
+            aria-label="Ir para o final"
+            className="flex items-center justify-center size-9 rounded-full bg-background border border-border shadow-md hover:bg-muted transition-colors"
+          >
+            <ChevronDown className="size-4 text-muted-foreground" />
+          </button>
+        </div>
       </div>
     )
-  }
+  },
 )
 ChatContainerRoot.displayName = "ChatContainerRoot"
 
@@ -130,26 +68,10 @@ function ChatContainerContent({
   ...props
 }: ChatContainerContentProps): React.ReactElement {
   return (
-    <div
-      className={cn("flex w-full flex-col", className)}
-      {...props}
-    >
+    <div className={cn("flex w-full flex-col", className)} {...props}>
       {children}
     </div>
   )
 }
 
-function ChatContainerScrollAnchor({
-  className,
-  ...props
-}: ChatContainerScrollAnchorProps): React.ReactElement {
-  return (
-    <div
-      className={cn("h-px w-full shrink-0", className)}
-      aria-hidden="true"
-      {...props}
-    />
-  )
-}
-
-export { ChatContainerRoot, ChatContainerContent, ChatContainerScrollAnchor }
+export { ChatContainerRoot, ChatContainerContent }

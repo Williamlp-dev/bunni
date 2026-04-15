@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { MessageBubble } from "./message-bubble"
 import { TypingIndicator } from "./typing-indicator"
 import { Menu, MenuTrigger, MenuPopup, MenuItem } from "@/components/ui/menu"
-import { ChatContainerRoot, ChatContainerContent, ChatContainerScrollAnchor } from "./chat-container"
+import { ChatContainerRoot, ChatContainerContent } from "./chat-container"
 
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty-state'
 import { MessageSquare, Trash2, Ban, ChevronDown, Reply, Loader2, CheckSquare } from "lucide-react"
@@ -249,8 +249,8 @@ export function MessageList({
     if (hasNextPage && !isFetchingNextPage && onLoadMore) {
       if (containerRef.current) {
         savedScrollRef.current = {
-           scrollHeight: containerRef.current.scrollHeight,
-           scrollTop: containerRef.current.scrollTop
+          scrollHeight: containerRef.current.scrollHeight,
+          scrollTop: containerRef.current.scrollTop,
         }
       }
       onLoadMore()
@@ -263,13 +263,12 @@ export function MessageList({
   })
 
   useLayoutEffect(() => {
-    if (savedScrollRef.current && containerRef.current) {
-       const heightDiff = containerRef.current.scrollHeight - savedScrollRef.current.scrollHeight
-       if (heightDiff > 0) {
-          containerRef.current.scrollTop = savedScrollRef.current.scrollTop + heightDiff
-       }
-       savedScrollRef.current = null
+    if (!savedScrollRef.current || !containerRef.current) return
+    const heightDiff = containerRef.current.scrollHeight - savedScrollRef.current.scrollHeight
+    if (heightDiff > 0) {
+      containerRef.current.scrollTop = savedScrollRef.current.scrollTop + heightDiff
     }
+    savedScrollRef.current = null
   }, [messages.length])
 
   if (initialMaxTimeRef.current === null && messages.length > 0) {
@@ -282,9 +281,9 @@ export function MessageList({
     return (
       <ChatContainerRoot
         ref={containerRef}
-        className="flex-1 min-h-0 selection:bg-foreground selection:text-background overflow-x-hidden"
+        className="selection:bg-foreground selection:text-background overflow-x-hidden"
       >
-        <ChatContainerContent className="flex-col min-h-full gap-0 px-4 py-4">
+        <ChatContainerContent className="flex-col gap-0 px-4 pt-4 pb-4">
           {hasNextPage && (
             <div ref={loadMoreRef} className="flex justify-center pb-4 h-10">
               {isFetchingNextPage && (
@@ -295,7 +294,6 @@ export function MessageList({
               )}
             </div>
           )}
-          <div className="flex-1" />
           
           {Object.entries(groupedMessages).map(([dateLabel, dateMsgs]) => (
             <div key={dateLabel} className="flex flex-col gap-0">
@@ -329,11 +327,10 @@ export function MessageList({
             </div>
           ))}
 
-          <TypingIndicator 
-            isTyping={isTyping} 
-            lastMessageId={messages[messages.length - 1]?.id} 
+          <TypingIndicator
+            isTyping={isTyping}
+            lastMessageId={messages[messages.length - 1]?.id}
           />
-          <ChatContainerScrollAnchor />
         </ChatContainerContent>
       </ChatContainerRoot>
     )
