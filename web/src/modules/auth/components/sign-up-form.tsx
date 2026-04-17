@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Loader2, User, Mail, Lock, AtSign } from "lucide-react"
+import { Loader2, User, Mail, Lock, AtSign, Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
 import { auth } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,7 @@ type SignUpSchema = z.infer<typeof signUpSchema>
 export function SignUp(): React.ReactElement {
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const {
     register,
@@ -36,7 +37,7 @@ export function SignUp(): React.ReactElement {
 
   async function handleSignUp({ name, username, email, password }: SignUpSchema) {
     setIsLoading(true)
-    
+
     const { error } = await auth.signUp.email({
       name,
       username,
@@ -119,11 +120,20 @@ export function SignUp(): React.ReactElement {
               <Lock className="size-5" />
             </InputIcon>
             <InputField
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Senha"
               autoComplete="new-password"
               {...register("password")}
             />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="btn-press text-muted-foreground hover:text-foreground hover:bg-transparent data-pressed:bg-transparent shrink-0 mr-1"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+            </Button>
           </InputRoot>
           {errors.password && (
             <span className="text-xs text-destructive pl-4">{errors.password.message}</span>

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Loader2, Trash2, TriangleAlert } from "lucide-react"
+import { Loader2, Trash2, TriangleAlert, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { InputRoot, InputField } from "@/components/ui/input"
 import {
@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils"
 export function DeleteAccountDialog() {
   const [isOpen, setIsOpen] = useState(false)
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -55,10 +56,14 @@ export function DeleteAccountDialog() {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger className="btn-press inline-flex items-center justify-center gap-2 rounded-md border border-destructive/30 bg-transparent px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 w-full sm:w-auto">
-        <Trash2 className="size-4" />
-        Deletar Conta
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button variant="destructive-outline" size="sm" className="btn-press w-full sm:w-auto gap-2">
+            <Trash2 className="size-4" />
+            Deletar Conta
+          </Button>
+        }
+      />
 
       <DialogPopup showCloseButton={false}>
         <DialogHeader>
@@ -85,7 +90,7 @@ export function DeleteAccountDialog() {
           <InputRoot className={cn(error && "border-destructive focus-within:ring-destructive")}>
             <InputField
               id="delete-password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Digite sua senha..."
               value={password}
               onChange={(e) => {
@@ -98,6 +103,15 @@ export function DeleteAccountDialog() {
               }}
               autoFocus
             />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="btn-press text-muted-foreground hover:text-foreground hover:bg-transparent data-pressed:bg-transparent shrink-0 mr-1"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+            </Button>
           </InputRoot>
           {error && (
             <p className="text-xs text-destructive animate-in fade-in slide-in-from-top-1 duration-150">

@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Loader2, Lock } from "lucide-react"
+import { Loader2, Lock, Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
 import { auth } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
@@ -26,6 +26,8 @@ type ResetPasswordFormProps = {
 export function ResetPasswordForm({ token }: ResetPasswordFormProps): React.ReactElement {
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const {
     register,
@@ -37,7 +39,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps): React.Reac
 
   async function handleResetPassword({ password }: ResetPasswordSchema) {
     setIsLoading(true)
-    
+
     const { error } = await auth.resetPassword({
       newPassword: password,
       token,
@@ -67,10 +69,19 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps): React.Reac
               <Lock className="size-5" />
             </InputIcon>
             <InputField
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Nova senha"
               {...register("password")}
             />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="btn-press text-muted-foreground hover:text-foreground hover:bg-transparent data-pressed:bg-transparent shrink-0 mr-1"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+            </Button>
           </InputRoot>
           {errors.password && (
             <span className="text-xs text-destructive pl-4">{errors.password.message}</span>
@@ -83,17 +94,26 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps): React.Reac
               <Lock className="size-5" />
             </InputIcon>
             <InputField
-              type="password"
+              type={showConfirmPassword ? "text" : "password"}
               placeholder="Confirmar nova senha"
               {...register("confirmPassword")}
             />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="btn-press text-muted-foreground hover:text-foreground hover:bg-transparent data-pressed:bg-transparent shrink-0 mr-1"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              {showConfirmPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+            </Button>
           </InputRoot>
           {errors.confirmPassword && (
             <span className="text-xs text-destructive pl-4">{errors.confirmPassword.message}</span>
           )}
         </div>
 
-        <Button className="h-12 w-full" type="submit" disabled={isLoading}>
+        <Button className="w-full rounded-none" size="lg" type="submit" disabled={isLoading}>
           {isLoading ? (
             <Loader2 className="size-5 animate-spin text-primary-foreground" />
           ) : (

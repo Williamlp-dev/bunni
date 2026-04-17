@@ -69,7 +69,7 @@ export function ForgotPasswordForm(): React.ReactElement {
           )}
         </div>
 
-        <Button className="h-12 w-full" type="submit" disabled={isLoading}>
+        <Button className="w-full rounded-none" size="lg" type="submit" disabled={isLoading}>
           {isLoading ? (
             <Loader2 className="size-5 animate-spin text-primary-foreground" />
           ) : (
