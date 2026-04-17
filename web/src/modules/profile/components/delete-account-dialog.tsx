@@ -43,7 +43,12 @@ export function DeleteAccountDialog() {
     try {
       const { error: deleteError } = await auth.deleteUser({ password })
       if (deleteError) {
-        setError("Senha incorreta ou erro inesperado. Tente novamente.")
+        const status = deleteError.status ?? 0
+        if (status === 401 || status === 403) {
+          setError("Senha incorreta. Tente novamente.")
+        } else {
+          setError("Erro ao deletar conta. Tente novamente mais tarde.")
+        }
         return
       }
       window.location.href = "/sign-in"
