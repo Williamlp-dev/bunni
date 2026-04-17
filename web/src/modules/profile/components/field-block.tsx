@@ -12,7 +12,7 @@ type FieldBlockProps = {
 
 export function FieldBlock({ label, isEditing, onEdit, display, editor }: FieldBlockProps) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5 w-full">
       <div className="flex items-center gap-2">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
         {!isEditing && (

@@ -100,8 +100,8 @@ function ProfilePage() {
 
       <div className="space-y-3">
         <div className="bg-card border border-border rounded-xl p-6">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-            <div className="flex flex-col items-center gap-1.5 shrink-0">
+          <div className="flex flex-row items-start gap-6">
+            <div className="flex flex-col items-start gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={avatar.handleAvatarClick}
@@ -141,7 +141,7 @@ function ProfilePage() {
               />
             </div>
 
-            <div className="flex-1 space-y-5 w-full text-center sm:text-left">
+            <div className="flex-1 space-y-5 w-full">
               <FieldBlock
                 label="Nome"
                 isEditing={isEditingName}
@@ -150,8 +150,8 @@ function ProfilePage() {
                   <p className="text-lg font-semibold text-foreground tracking-tight">{savedName}</p>
                 }
                 editor={
-                  <div className="flex items-center gap-2 max-w-xs mx-auto sm:mx-0">
-                    <InputRoot className="flex-1 h-9 rounded-lg">
+                  <div className="flex items-center gap-2 w-full">
+                    <InputRoot className="flex-1 h-10 rounded-lg">
                       <InputField
                         value={editingName}
                         onChange={(e) => setEditingName(e.target.value)}
@@ -182,7 +182,7 @@ function ProfilePage() {
                 <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                   Username
                 </p>
-                <div className="flex items-center gap-1.5 justify-center sm:justify-start">
+                <div className="flex items-center gap-1.5">
                   <AtSign className="size-3.5 text-muted-foreground shrink-0" />
                   <p className="text-sm font-medium text-foreground">{username}</p>
                 </div>
@@ -289,6 +289,7 @@ function ProfilePage() {
               window.location.href = "/sign-in"
             }}
             variant="destructive"
+            size="sm"
             className="btn-press w-full sm:w-auto gap-2"
           >
             <LogOut className="size-4" />
