@@ -18,7 +18,7 @@ export const messages = pgTable("messages", {
   audioUrl: text("audio_url"),
   audioDuration: integer("audio_duration"),
   imageUrl: text("image_url"),
-  replyToId: text("reply_to_id").references((): AnyPgColumn => messages.id),
+  replyToId: text("reply_to_id").references((): AnyPgColumn => messages.id, { onDelete: "set null" }),
   replySnapshotContent: text("reply_snapshot_content"),
   replySnapshotSenderName: text("reply_snapshot_sender_name"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
