@@ -85,6 +85,13 @@
       "when": 1775704175847,
       "tag": "0011_redundant_thor_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1745179200000,
+      "tag": "0012_fix_reply_to_id_on_delete_set_null",
+      "breakpoints": true
     }
   ]
 }
