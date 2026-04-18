@@ -2,6 +2,8 @@ export type User = {
   id: string
   name: string
   email: string
+  emailVerified: boolean
+  isVerified?: boolean | null
   image?: string | null
   username?: string | null
   displayUsername?: string | null
@@ -12,6 +14,7 @@ export type User = {
 export type UserBasicInfo = {
   id: string
   name: string
+  isVerified?: boolean
   image?: string | null
   username?: string | null
   displayUsername?: string | null
