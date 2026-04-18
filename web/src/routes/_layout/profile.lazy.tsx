@@ -8,6 +8,7 @@ import {
   AtSign,
   Camera,
   AlignLeft,
+  BadgeCheck,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { InputRoot, InputField } from "@/components/ui/input"
@@ -20,6 +21,7 @@ import { useProfileAvatar } from "@/modules/profile/hooks/use-profile-avatar"
 import { DeleteAccountDialog } from "@/modules/profile/components/delete-account-dialog"
 import { FieldBlock } from "@/modules/profile/components/field-block"
 import { ActionButtons } from "@/modules/profile/components/action-buttons"
+import { getUserInitials } from "@/modules/auth/hooks/use-current-user"
 
 export const Route = createLazyFileRoute("/_layout/profile")({
   component: ProfilePage,
@@ -31,6 +33,7 @@ const BIO_WARN_THRESHOLD = 220
 function ProfilePage() {
   const { session } = useRouteContext({ from: "/_layout" })
   const user = session.user
+  console.log("Current user object:", user)
 
   const [isEditingName, setIsEditingName] = useState(false)
   const [savedName, setSavedName] = useState(user.name)
@@ -81,7 +84,7 @@ function ProfilePage() {
     }
   }
 
-  const initials = user.name.slice(0, 2).toUpperCase()
+  const initials = getUserInitials(user.name)
   const username = user.displayUsername || user.username
   const bioLength = editingBio.length
   const bioRemaining = MAX_BIO_LENGTH - bioLength
@@ -95,7 +98,7 @@ function ProfilePage() {
         eyebrow="Perfil"
         title="Suas Informações"
         backTo="/chat"
-        backLabel="Voltar para o chat"
+        backLabel="Voltar"
       />
 
       <div className="space-y-3">
@@ -105,23 +108,25 @@ function ProfilePage() {
               <button
                 type="button"
                 onClick={avatar.handleAvatarClick}
-                className="relative group rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="relative group rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-transform duration-200 active:scale-95"
                 aria-label="Trocar foto de perfil"
               >
-                <Avatar className="size-20 transition-opacity duration-150 group-hover:opacity-90">
+                <Avatar className="size-20 shadow-sm border border-border/40">
                   <AvatarImage src={avatar.avatarPreview ?? (user.image ?? undefined)} alt={user.name} />
-                  <AvatarFallback delay={0} className="bg-primary/10 text-primary text-xl font-bold">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
 
-                {avatar.isUploading ? (
-                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
-                    <Loader2 className="size-5 text-white animate-spin" />
+                {avatar.isUploading && (
+                  <div className="absolute inset-0 z-20 flex items-center justify-center rounded-full bg-background/50 backdrop-blur-sm">
+                    <Loader2 className="size-6 text-primary animate-spin" />
                   </div>
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 group-hover:bg-black/40 transition-colors duration-200">
-                    <Camera className="size-5 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                )}
+
+                {!avatar.isUploading && (
+                  <div className="absolute -bottom-1 -right-1 z-20 flex items-center justify-center size-8 rounded-full bg-primary text-primary-foreground border-[3px] border-card shadow-sm">
+                    <Camera className="size-4" />
                   </div>
                 )}
               </button>
@@ -147,7 +152,12 @@ function ProfilePage() {
                 isEditing={isEditingName}
                 onEdit={() => setIsEditingName(true)}
                 display={
-                  <p className="text-lg font-semibold text-foreground tracking-tight">{savedName}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-lg font-semibold text-foreground tracking-tight">{savedName}</p>
+                    {user.isVerified && (
+                      <BadgeCheck className="size-5 text-primary" />
+                    )}
+                  </div>
                 }
                 editor={
                   <div className="flex items-center gap-2 w-full">

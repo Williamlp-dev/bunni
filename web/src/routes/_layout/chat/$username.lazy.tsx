@@ -134,6 +134,7 @@ function ChatWithUserPage() {
           <ChatHeader 
             title={chat.displayName}
             targetUserId={chat.targetUser?.id}
+            isVerified={chat.targetUser?.isVerified}
             onBack={chat.navigateToChat} 
             onClearChat={chat.handleClearChat}
             onTitleClick={() => setIsProfileOpen(true)}
