@@ -11,6 +11,7 @@ export const UserBasicSchema = t.Object({
   name: t.Union([t.String(), t.Null()]),
   displayUsername: t.String(),
   image: t.Union([t.String(), t.Null()]),
+  isVerified: t.Optional(t.Boolean()),
 })
 
 export type UserBasic = Static<typeof UserBasicSchema>
@@ -62,6 +63,7 @@ export type UserBasicInfo = {
   username: string
   image: string | null
   bio: string | null
+  isVerified: boolean
 }
 
 export const USER_SELECT_FIELDS = {
@@ -71,4 +73,5 @@ export const USER_SELECT_FIELDS = {
   username: true,
   image: true,
   bio: true,
+  isVerified: true,
 } as const

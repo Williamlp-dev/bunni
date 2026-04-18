@@ -18,6 +18,7 @@ const USER_FIELDS = {
   displayUsername: users.displayUsername,
   image: users.image,
   bio: users.bio,
+  isVerified: users.isVerified,
 }
 
 export async function searchUsers(query: string, currentUserId: string, limit = 20) {

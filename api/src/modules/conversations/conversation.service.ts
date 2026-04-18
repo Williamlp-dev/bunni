@@ -107,6 +107,7 @@ async function createNewConversation(
         username: users.username,
         displayUsername: users.displayUsername,
         bio: users.bio,
+        isVerified: users.isVerified,
       })
       .from(users)
       .where(inArray(users.id, [creatorId, participantId]))
@@ -170,6 +171,7 @@ export async function getConversationById(
       displayUsername: users.displayUsername,
       image: users.image,
       bio: users.bio,
+      isVerified: users.isVerified,
     })
     .from(conversationParticipants)
     .innerJoin(users, eq(conversationParticipants.userId, users.id))
@@ -229,6 +231,7 @@ export async function getUserConversations(
         displayUsername: users.displayUsername,
         image: users.image,
         bio: users.bio,
+        isVerified: users.isVerified,
       })
       .from(conversationParticipants)
       .innerJoin(users, eq(conversationParticipants.userId, users.id))
@@ -332,6 +335,7 @@ export async function getUserConversations(
         displayUsername: p.displayUsername || p.username,
         image: p.image,
         bio: p.bio,
+        isVerified: p.isVerified,
       })),
       lastMessage,
       unreadCount: unreadCountByConversation.get(conv.id) ?? 0,

@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   displayUsername: text("display_username").notNull().unique(),
   bio: varchar("bio", { length: 255 }),
+  isVerified: boolean("is_verified").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

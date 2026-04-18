@@ -17,6 +17,7 @@ const USER_SELECT_FIELDS = {
   username: users.username,
   displayUsername: users.displayUsername,
   image: users.image,
+  isVerified: users.isVerified,
 }
 
 export async function sendFriendRequest(senderId: string, receiverId: string): Promise<FriendRequest> {
@@ -123,6 +124,7 @@ export async function getFriends(userId: string) {
       username: users.username,
       displayUsername: users.displayUsername,
       image: users.image,
+      isVerified: users.isVerified,
       friendsSince: friendships.createdAt,
     })
     .from(friendships)
@@ -146,6 +148,7 @@ export async function getFriends(userId: string) {
     username: row.username,
     displayUsername: row.displayUsername || row.username,
     image: row.image,
+    isVerified: row.isVerified,
     friendsSince: row.friendsSince,
   }))
 }
