@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ChevronLeft, MoreVertical, Eraser } from "lucide-react"
+import { ChevronLeft, MoreVertical, Eraser, BadgeCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PageHeader as PageHeaderUI } from "@/components/ui/page-header"
 import {
@@ -14,12 +14,13 @@ import { useIsOnline } from "@/modules/chat/hooks/use-presence"
 type ChatHeaderProps = {
   title: string
   targetUserId?: string
+  isVerified?: boolean
   onBack: () => void
   onClearChat: () => void
   onTitleClick?: () => void
 }
 
-export function ChatHeader({ title, targetUserId, onBack, onClearChat, onTitleClick }: ChatHeaderProps) {
+export function ChatHeader({ title, targetUserId, isVerified, onBack, onClearChat, onTitleClick }: ChatHeaderProps) {
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false)
   const isOnline = useIsOnline(targetUserId)
 
@@ -29,6 +30,11 @@ export function ChatHeader({ title, targetUserId, onBack, onClearChat, onTitleCl
         title={title}
         description={isOnline ? "online" : undefined}
         onTitleClick={onTitleClick}
+        titleAdornment={
+          isVerified
+            ? <BadgeCheck className="size-4 text-primary shrink-0" />
+            : undefined
+        }
         startContent={
           <Button
             aria-label="Voltar para conversas"

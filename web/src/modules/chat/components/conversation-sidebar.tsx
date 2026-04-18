@@ -107,6 +107,7 @@ function ConversationList({
             unreadCount={unreadCount}
             isTyping={isTyping}
             state={conversationState}
+            isVerified={participant.isVerified}
             onClick={() => {
               if (username) {
                 navigate({ to: `/chat/$username`, params: { username } })

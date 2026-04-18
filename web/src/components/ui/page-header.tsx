@@ -12,6 +12,7 @@ export type PageHeaderProps = {
   backLabel?: string
   onBack?: () => void
   onTitleClick?: () => void
+  titleAdornment?: React.ReactNode
   actions?: React.ReactNode
   startContent?: React.ReactNode
   className?: string
@@ -27,6 +28,7 @@ export function PageHeader({
   backLabel = "Voltar",
   onBack,
   onTitleClick,
+  titleAdornment,
   actions,
   startContent,
   className,
@@ -118,9 +120,12 @@ export function PageHeader({
           }}
         >
           {eyebrow && <span className="text-[10px] font-semibold uppercase tracking-widest text-primary leading-none mb-1">{eyebrow}</span>}
-          <h1 className="min-w-0 truncate text-base font-bold tracking-tight text-foreground md:text-lg">
-            {title}
-          </h1>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <h1 className="min-w-0 truncate text-base font-bold tracking-tight text-foreground md:text-lg">
+              {title}
+            </h1>
+            {titleAdornment}
+          </div>
           {description && <span className="text-xs text-muted-foreground truncate">{description}</span>}
         </div>
       </div>

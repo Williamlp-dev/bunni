@@ -2,7 +2,9 @@ import { memo } from "react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MessageStatus } from "@/modules/chat/components/message-status"
+import { getUserInitials } from "@/modules/auth/hooks/use-current-user"
 import type { MessageStatusType } from "@/lib/eden-types"
+import { BadgeCheck } from "lucide-react"
 
 type ConversationItemProps = {
   name: string
@@ -16,6 +18,7 @@ type ConversationItemProps = {
   unreadCount?: number
   isTyping?: boolean
   state?: "default" | "active" | "unread"
+  isVerified?: boolean
   onClick?: () => void
   className?: string
 }
@@ -32,6 +35,7 @@ function ConversationItemInner({
   unreadCount,
   isTyping = false,
   state = "default",
+  isVerified = false,
   onClick,
   className,
 }: ConversationItemProps): React.ReactElement {
@@ -66,19 +70,24 @@ function ConversationItemInner({
     >
       <Avatar className="size-10 shrink-0">
         <AvatarImage src={avatarSrc} alt={name} />
-        <AvatarFallback className="bg-primary/10 text-primary">{name.slice(0, 2).toUpperCase()}</AvatarFallback>
+        <AvatarFallback className="bg-primary/10 text-primary">{getUserInitials(name)}</AvatarFallback>
       </Avatar>
 
       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
         <div className="flex items-baseline justify-between gap-2">
-          <span
-            className={cn(
-              "truncate font-semibold text-sm tracking-tight",
-              state === "active" ? "text-primary" : "text-foreground",
+          <div className="flex items-center gap-1 min-w-0">
+            <span
+              className={cn(
+                "truncate font-semibold text-sm tracking-tight",
+                state === "active" ? "text-primary" : "text-foreground",
+              )}
+            >
+              {name}
+            </span>
+            {isVerified && (
+              <BadgeCheck className="size-3.5 text-primary shrink-0" />
             )}
-          >
-            {name}
-          </span>
+          </div>
           <span className="shrink-0 text-xs font-medium text-muted-foreground/70 tabular-nums">
             {timestamp}
           </span>

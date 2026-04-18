@@ -1,6 +1,7 @@
-import { Check, X, Loader2 } from "lucide-react"
+import { Check, X, Loader2, BadgeCheck } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { getUserInitials } from "@/modules/auth/hooks/use-current-user"
 import type { Request } from "@/lib/eden-types"
 
 type FriendRequestCardProps = {
@@ -22,7 +23,7 @@ export function FriendRequestCard({
   const sender = request.sender
   if (!sender) return null
 
-  const initials = sender.name?.slice(0, 2).toUpperCase() ?? "U"
+  const initials = getUserInitials(sender.name)
   const username = sender.displayUsername || sender.username
 
   return (
@@ -35,9 +36,14 @@ export function FriendRequestCard({
       </Avatar>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground truncate">
-          {sender.name}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm font-semibold text-foreground truncate">
+            {sender.name}
+          </p>
+          {sender.isVerified && (
+            <BadgeCheck className="size-4 text-primary shrink-0" />
+          )}
+        </div>
         <p className="text-xs text-muted-foreground truncate mt-0.5">
           @{username}
         </p>

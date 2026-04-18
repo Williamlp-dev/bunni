@@ -2,6 +2,7 @@ import { useState, useRef } from "react"
 import { useRouter } from "@tanstack/react-router"
 import { auth } from "@/lib/auth"
 import { api } from "@/lib/api"
+import { queryClient } from "@/lib/query-client"
 
 const MAX_AVATAR_SIZE = 1 * 1024 * 1024
 const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"] as const
@@ -47,6 +48,10 @@ export function useProfileAvatar(): UseProfileAvatarReturn {
 
     setIsUploading(true)
     setError(null)
+    
+    // Preview instantâneo
+    const localUrl = URL.createObjectURL(file)
+    setAvatarPreview(localUrl)
 
     try {
       const { data: presigned, error: presignedError } = await api.users.avatar["presigned-url"].post({
@@ -65,12 +70,18 @@ export function useProfileAvatar(): UseProfileAvatarReturn {
       if (updateError || !updated) throw new Error()
 
       await auth.updateUser({ image: presigned.publicUrl })
-      setAvatarPreview(presigned.publicUrl)
+      
+      // Atualizar cache de sessão para garantir que tudo pegue a nova imagem sem F5
+      await queryClient.invalidateQueries({ queryKey: ["auth-session"] })
       await router.invalidate()
+      
+      setAvatarPreview(presigned.publicUrl)
     } catch {
       setError("Erro ao atualizar avatar. Tente novamente.")
+      setAvatarPreview(null) // Resetar o preview em caso de erro
     } finally {
       setIsUploading(false)
+      URL.revokeObjectURL(localUrl)
     }
   }
 

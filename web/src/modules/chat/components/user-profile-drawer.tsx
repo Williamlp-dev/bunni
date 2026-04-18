@@ -1,9 +1,10 @@
 import { Drawer } from "vaul"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Ban, ShieldOff } from "lucide-react"
+import { Ban, ShieldOff, BadgeCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBlockUser, useUnblockUser } from "@/modules/profile/hooks/use-block-user"
+import { getUserInitials } from "@/modules/auth/hooks/use-current-user"
 
 type TargetUser = {
   id: string
@@ -12,6 +13,7 @@ type TargetUser = {
   username: string
   displayUsername: string
   bio?: string | null
+  isVerified?: boolean
 }
 
 type UserProfileDrawerProps = {
@@ -21,17 +23,9 @@ type UserProfileDrawerProps = {
   isBlocked: boolean
 }
 
-function getInitials(name: string | null, username: string): string {
-  if (name) {
-    const parts = name.trim().split(" ")
-    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-    return name.slice(0, 2).toUpperCase()
-  }
-  return username.slice(0, 2).toUpperCase()
-}
 
 export function UserProfileDrawer({ open, onOpenChange, user, isBlocked }: UserProfileDrawerProps) {
-  const initials = getInitials(user.name, user.username)
+  const initials = getUserInitials(user.name ?? user.username)
   const blockUser = useBlockUser()
   const unblockUser = useUnblockUser()
 
@@ -71,8 +65,9 @@ export function UserProfileDrawer({ open, onOpenChange, user, isBlocked }: UserP
                 </AvatarFallback>
               </Avatar>
 
-              <Drawer.Title className="text-3xl font-bold tracking-tight text-foreground mb-1 leading-tight">
+              <Drawer.Title className="flex items-center gap-2 justify-center text-3xl font-bold tracking-tight text-foreground mb-1 leading-tight">
                 {user.name ?? user.username}
+                {user.isVerified && <BadgeCheck className="size-6 text-primary shrink-0" />}
               </Drawer.Title>
               <Drawer.Description className="text-base text-muted-foreground font-medium">
                 @{user.displayUsername}

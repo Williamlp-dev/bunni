@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils"
+import { BadgeCheck } from "lucide-react"
 
 type ProfileCardProps = {
   children: React.ReactNode
@@ -62,9 +63,7 @@ export function ProfileField({ label, value, icon, verified }: ProfileFieldProps
         <div className="flex items-center gap-2">
           <p className="text-base font-semibold text-foreground">{value}</p>
           {verified && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20 rounded-md">
-              ✓ Verificado
-            </span>
+            <BadgeCheck className="size-5 text-primary" />
           )}
         </div>
       </div>

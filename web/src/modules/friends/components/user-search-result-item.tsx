@@ -1,7 +1,8 @@
-import { UserPlus, Check, Clock, Loader2 } from "lucide-react"
+import { UserPlus, Check, Clock, Loader2, BadgeCheck } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { getUserInitials } from "@/modules/auth/hooks/use-current-user"
 import type { UserSearchInfo } from "@/lib/eden-types"
 
 type UserSearchResultItemProps = {
@@ -18,10 +19,7 @@ export function UserSearchResultItem({
   onAdd,
   isLoading,
 }: UserSearchResultItemProps): React.ReactElement {
-  const initials =
-    user.name?.slice(0, 2).toUpperCase() ||
-    user.displayUsername?.slice(0, 2).toUpperCase() ||
-    "??"
+  const initials = getUserInitials(user.name)
 
   return (
     <div className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border">
@@ -33,8 +31,9 @@ export function UserSearchResultItem({
       </Avatar>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground truncate">
+        <p className="text-sm font-semibold text-foreground truncate flex items-center gap-1">
           {user.name}
+          {user.isVerified && <BadgeCheck className="size-4 text-primary shrink-0" />}
         </p>
         <p className="text-xs text-muted-foreground truncate mt-0.5">
           @{user.displayUsername}
