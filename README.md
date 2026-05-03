@@ -27,5 +27,3 @@ Como se trata de um projeto experimental e de demonstração pública sem geraç
 1. **Modo "Sleep" na Render (Cold Start):** O serviço do _backend_ está hospedado num servidor gratuito do [Render](https://render.com/). Após alguns minutos sem requisições, ele inativa automaticamente para aguardar acesso. Como resultado, **pode demorar alguns segundos extras** para o servidor "acordar" no seu primeiro log in do dia.
 2. **Recuperação de Senha (Reset):** O link e a lógica de verificação existem, porém, até o presente momento o `Reset Password` pode não funcionar em sua plenitude pois o projeto não possui aquisição de um domínio global validado pelo provedor de e-mails para envio transparente.
 3. **Plano Positivo no Frontend:** Diferente da API, nosso cliente da aplicação está na ótima infraestrutura da **[Vercel](https://vercel.com/)** que continua perfeitamente imune à inativação temporária, rodando veloz desde o primeiro load.
-
-Mesmo com as inevitáveis margens dessas limitações externas de *hosting* free, pode ter certeza que **o projeto está extremamente otimizado a nível de código base!**
