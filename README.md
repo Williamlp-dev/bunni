@@ -29,6 +29,3 @@ Como se trata de um projeto experimental e de demonstração pública sem geraç
 3. **Plano Positivo no Frontend:** Diferente da API, nosso cliente da aplicação está na ótima infraestrutura da **[Vercel](https://vercel.com/)** que continua perfeitamente imune à inativação temporária, rodando veloz desde o primeiro load.
 
 Mesmo com as inevitáveis margens dessas limitações externas de *hosting* free, pode ter certeza que **o projeto está extremamente otimizado a nível de código base!**
-
----
-*Feito como fonte de conhecimento, castelo de ideias.*
